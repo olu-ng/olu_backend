@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  dotnet-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olubackendapp-dotnet-app
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      - app_logs:/app/logs
+      - app_data:/app/data
+    restart: always  # auto-restart on failure or system reboot
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  app_logs:
+  app_data:

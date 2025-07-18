@@ -71,4 +71,6 @@ jobs:
             # 4. Restart your containers
             # docker compose -f docker-compose.rabbitmq.yml up
             # docker compose -f docker-compose.redis.yml up
+            chmod +x install_mssql_express_with_backup.sh
+            sudo ./install_mssql_express_with_backup.sh
           EOF

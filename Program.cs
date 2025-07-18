@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +41,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(opts =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
 
 // 2) JWT
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -124,7 +125,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     });
 }
 
-//�� Seed roles
+//–– Seed roles
 using (var scope = app.Services.CreateScope())
 {
     var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -137,6 +138,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.MapGet("/health", () => "Healthy");
+
+app.Urls.Add("http://+:80");  // <-- 👈 Make sure Kestrel listens on port 80
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
