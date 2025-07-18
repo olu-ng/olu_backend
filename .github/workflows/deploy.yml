@@ -1,0 +1,74 @@
+﻿
+name: Deploy Backend to AWS LightSail
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync files to Lightsail
+        run: |
+          rsync -avz --delete ./ \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:${{ secrets.LIGHTSAIL_PATH }}
+
+      - name: Install Docker & Restart app on Lightsail
+        run: |
+          ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+            set -e
+
+            # 1. If docker isn't installed, install it
+            if ! command -v docker &> /dev/null; then
+              echo "🚀 Installing Docker..."
+              sudo apt-get update
+              sudo apt-get install -y \
+                apt-transport-https \
+                ca-certificates \
+                curl \
+                gnupg \
+                lsb-release
+
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+                | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+              echo \
+                "deb [arch=$(dpkg --print-architecture) \
+                signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+                https://download.docker.com/linux/ubuntu \
+                $(lsb_release -cs) stable" \
+                | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+              sudo apt-get update
+              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            else
+              echo "✅ Docker already installed"
+            fi
+
+            # 2. Install the docker-compose plugin if missing
+            if ! docker compose version &> /dev/null; then
+              echo "🚀 Installing Docker Compose plugin..."
+              sudo apt-get install -y docker-compose-plugin
+            else
+              echo "✅ Docker Compose plugin already installed"
+            fi
+
+            # 3. Go to your app directory
+            cd ${{ secrets.LIGHTSAIL_PATH }}
+
+            # 4. Restart your containers
+            docker compose -f docker-compose.rabbitmq.yml up
+            docker compose -f docker-compose.redis.yml up
+          EOF

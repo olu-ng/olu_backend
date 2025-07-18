@@ -1,0 +1,25 @@
+# Ignore build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio working folder
+.vs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Configuration files that might contain secrets (optional)
+appsettings.Development.json
+appsettings.json
+*.secrets.json
+
+# Rider and VS Code settings (if used)
+.idea/
+.vscode/

@@ -1,0 +1,6 @@
+@OluBackendApp_HostAddress = http://localhost:5044
+
+GET {{OluBackendApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
