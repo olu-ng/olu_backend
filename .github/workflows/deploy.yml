@@ -69,6 +69,6 @@ jobs:
             cd ${{ secrets.LIGHTSAIL_PATH }}
 
             # 4. Restart your containers
-            docker compose -f docker-compose.rabbitmq.yml up
-            docker compose -f docker-compose.redis.yml up
+            # docker compose -f docker-compose.rabbitmq.yml up
+            # docker compose -f docker-compose.redis.yml up
           EOF
