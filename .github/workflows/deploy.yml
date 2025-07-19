@@ -1,76 +1,58 @@
-﻿
-name: Deploy Backend to AWS LightSail
+﻿name: .NET CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main  # or your deployment branch
+  workflow_dispatch:  # allows manual triggering
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: 🧾 Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up SSH key
+      - name: 🛠️ Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x' # adjust if needed
+
+      - name: 📦 Restore dependencies
+        run: dotnet restore
+
+      - name: 🔨 Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: 🧪 Run tests
+        run: dotnet test --no-build --verbosity normal
+
+      - name: 📤 Publish app
+        run: dotnet publish -c Release -o ./publish
+
+      - name: 🚀 Deploy to Lightsail and Restart App
         run: |
+          echo "🔐 Setting up SSH key"
           mkdir -p ~/.ssh
           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Sync files to Lightsail
-        run: |
-          rsync -avz --delete ./ \
-            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:${{ secrets.LIGHTSAIL_PATH }}
+          echo "📡 Uploading build files to temp directory"
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./publish/ \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/var/www/olu_olu_backend/temp/
 
-      - name: Install Docker & Restart app on Lightsail
-        run: |
-          ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+          echo "🌀 Restarting app on server"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
             set -e
 
-            # 1. If docker isn't installed, install it
-            if ! command -v docker &> /dev/null; then
-              echo "🚀 Installing Docker..."
-              sudo apt-get update
-              sudo apt-get install -y \
-                apt-transport-https \
-                ca-certificates \
-                curl \
-                gnupg \
-                lsb-release
+            echo "🔁 Cleaning previous deployment..."
+            rm -rf /var/www/olu_backend/app/*
+            mv /var/www/olu_backend/temp/* /var/www/olu_backend/app/
 
-              curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-                | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-              echo \
-                "deb [arch=$(dpkg --print-architecture) \
-                signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
-                https://download.docker.com/linux/ubuntu \
-                $(lsb_release -cs) stable" \
-                | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-              sudo apt-get update
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-            else
-              echo "✅ Docker already installed"
-            fi
-
-            # 2. Install the docker-compose plugin if missing
-            if ! docker compose version &> /dev/null; then
-              echo "🚀 Installing Docker Compose plugin..."
-              sudo apt-get install -y docker-compose-plugin
-            else
-              echo "✅ Docker Compose plugin already installed"
-            fi
-
-            # 3. Go to your app directory
-            cd ${{ secrets.LIGHTSAIL_PATH }}
-
-            # 4. Restart your containers
-            # docker compose -f docker-compose.rabbitmq.yml up
-            # docker compose -f docker-compose.redis.yml up
-            chmod +x install_mssql_express_with_backup.sh
-            sudo ./install_mssql_express_with_backup.sh
+            echo "🚦 Restarting kestrel-oluapp service"
+            sudo systemctl restart kestrel-oluapp
+            chmod +x setup-kestrel-oluapp.sh
+            ./setup-kestrel-oluapp.sh
+            echo "✅ App restarted successfully"
           EOF

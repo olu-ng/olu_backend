@@ -1,32 +1,27 @@
 ﻿# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
-# Copy project and restore dependencies
+# Copy csproj & restore
 COPY ["OluBackendApp.csproj", "./"]
 RUN dotnet restore
 
-# Copy everything else and publish
-COPY . ./
+# Copy everything else & publish
+COPY . .
 RUN dotnet publish -c Release -o /app/publish
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
 WORKDIR /app
 
-# Copy published output
+# Install ICU (for full globalization) and timezones
+RUN apk add --no-cache icu-libs tzdata
+
+# Tell .NET to use ICU rather than invariant-only mode
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+# Copy the published output
 COPY --from=build /app/publish .
 
-# Production‑safe environment defaults
-ENV ASPNETCORE_ENVIRONMENT=Production \
-    DOTNET_EnableDiagnostics=0
-
-# Optional health‑check endpoint
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl --fail http://localhost/health || exit 1
-
-# Expose HTTP port
-EXPOSE 80
-
-# Run the app
+# Launch the app
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]

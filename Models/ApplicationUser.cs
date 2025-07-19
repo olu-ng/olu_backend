@@ -9,5 +9,8 @@ namespace OluBackendApp.Models
         // Navigation
         public ArtisanProfile? ArtisanProfile { get; set; }
         public OfficeOwnerProfile? OfficeOwnerProfile { get; set; }
+
+        //public AdminProfile? AdminProfile { get; set; }
+        //public SuperAdminProfile? SuperAdminProfile { get; set; }
     }
 }

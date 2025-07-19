@@ -7,6 +7,7 @@ namespace OluBackendApp.Models
     public class OtpRecord
     {
         public int Id { get; set; }
+        //[Key]
         [Required] public string UserId { get; set; } = default!;
         [Required] public string Code { get; set; } = default!;
         [Required] public OtpPurpose Purpose { get; set; }

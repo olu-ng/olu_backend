@@ -1,8 +1,11 @@
 ﻿using OluBackendApp.Models;
+using System.ComponentModel.DataAnnotations;
 namespace OluBackendApp.Models
 {
     public class OfficeOwnerProfile
     {
+        //public int Id { get; set; }
+        //[Key]
         public int Id { get; set; }
         public string UserId { get; set; } = default!;
         public ApplicationUser User { get; set; } = default!;
