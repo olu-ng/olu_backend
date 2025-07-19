@@ -31,6 +31,12 @@ jobs:
       - name: 📤 Publish app
         run: dotnet publish -c Release -o ./publish
 
+      - name: 🛠️ Copy config files to output
+        run: |
+          cp appsettings*.json ./publish/
+          echo "✅ Config files copied:"
+          ls -l ./publish | grep appsettings
+
       - name: 🚀 Deploy to Lightsail & Restart App
         run: |
           echo "🔐 Setting up SSH key"
