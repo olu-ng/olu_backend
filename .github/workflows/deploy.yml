@@ -49,10 +49,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
             set -e
             echo "🔁 Cleaning previous deployment..."
+            sudo systemctl stop kestrel-oluapp
             rm -rf /opt/olu_backend/app/*
             mv /opt/olu_backend/temp/* /opt/olu_backend/app/
 
             echo "🚦 Restarting kestrel-oluapp service"
+            sudo systemctl daemon-reexec
             sudo systemctl restart kestrel-oluapp
             echo "✅ App restarted successfully"
             echo "Service Deployed Smoothly"
