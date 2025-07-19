@@ -3,8 +3,8 @@
 on:
   push:
     branches:
-      - main  # or your deployment branch
-  workflow_dispatch:  # allows manual triggering from GitHub UI
+      - main  # deployment branch
+  workflow_dispatch:  # manual trigger
 
 jobs:
   build-and-deploy:
@@ -39,22 +39,20 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
           echo "📁 Ensuring remote temp directory exists"
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "mkdir -p /var/www/olu_backend/temp"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "sudo mkdir -p /opt/olu_backend/{app,temp} && sudo chown -R \$USER:\$USER /opt/olu_backend"
 
           echo "📡 Uploading build files to server"
           rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./publish/ \
-            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/var/www/olu_backend/temp/
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/temp/
 
           echo "🌀 Restarting app on server"
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
             set -e
-
             echo "🔁 Cleaning previous deployment..."
-            rm -rf /var/www/olu_backend/app/*
-            mv /var/www/olu_backend/temp/* /var/www/olu_backend/app/
+            rm -rf /opt/olu_backend/app/*
+            mv /opt/olu_backend/temp/* /opt/olu_backend/app/
 
             echo "🚦 Restarting kestrel-oluapp service"
             sudo systemctl restart kestrel-oluapp
-
             echo "✅ App restarted successfully"
           EOF

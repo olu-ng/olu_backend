@@ -8,8 +8,8 @@ Description=Olu .NET Backend App
 After=network.target
 
 [Service]
-WorkingDirectory=/var/www/olu_olu_backend/app
-ExecStart=/usr/bin/dotnet /var/www/olu_backend/app/OluBackendApp.dll
+WorkingDirectory=/opt/olu_backend/app
+ExecStart=/usr/bin/dotnet /opt/olu_backend/app/OluBackendApp.dll
 Restart=always
 RestartSec=10
 SyslogIdentifier=oluapp
