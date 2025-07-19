@@ -55,4 +55,5 @@ jobs:
             echo "🚦 Restarting kestrel-oluapp service"
             sudo systemctl restart kestrel-oluapp
             echo "✅ App restarted successfully"
+            echo "Service Deployed Smoothly"
           EOF
