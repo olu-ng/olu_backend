@@ -3,8 +3,8 @@
 on:
   push:
     branches:
-      - main  # deployment branch
-  workflow_dispatch:  # manual trigger
+      - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -22,46 +22,43 @@ jobs:
       - name: 📦 Restore dependencies
         run: dotnet restore
 
-      - name: 🔨 Build
+      - name: 🔨 Build (Local Check)
         run: dotnet build --configuration Release --no-restore
 
       - name: 🧪 Run tests
         run: dotnet test --no-build --verbosity normal
 
-      - name: 📤 Publish app
-        run: dotnet publish -c Release -o ./publish
-
-      - name: 🛠️ Copy config files to output
-        run: |
-          cp appsettings*.json ./publish/
-          echo "✅ Config files copied:"
-          ls -l ./publish | grep appsettings
-
-      - name: 🚀 Deploy to Lightsail & Restart App
+      - name: 🚀 Deploy Full Source to Lightsail & Restart App
         run: |
           echo "🔐 Setting up SSH key"
           mkdir -p ~/.ssh
           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          echo "📁 Ensuring remote temp directory exists"
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "sudo mkdir -p /opt/olu_backend/{app,temp} && sudo chown -R \$USER:\$USER /opt/olu_backend"
+          echo "📁 Ensuring remote source directory exists"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
+            "sudo mkdir -p /opt/olu_backend/source && sudo chown -R \$USER:\$USER /opt/olu_backend"
 
-          echo "📡 Uploading build files to server"
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./publish/ \
-            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/temp/
+          echo "📤 Uploading full project to server"
+          rsync -avz --exclude 'bin' --exclude 'obj' --exclude '.git' \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/source/
 
-          echo "🌀 Restarting app on server"
+          echo "🌀 Building & restarting on server"
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
             set -e
-            echo "🔁 Cleaning previous deployment..."
-            sudo systemctl stop kestrel-oluapp
-            rm -rf /opt/olu_backend/app/*
-            mv /opt/olu_backend/temp/* /opt/olu_backend/app/
+            cd /opt/olu_backend/source
+
+            echo "🔄 Restoring & building"
+            dotnet restore
+            dotnet build --configuration Release
+
+            echo "📦 Running EF migration (if any)"
+            dotnet ef database update || echo "⚠️ Skipped migration"
 
             echo "🚦 Restarting kestrel-oluapp service"
+            sudo systemctl stop kestrel-oluapp || true
             sudo systemctl daemon-reexec
             sudo systemctl restart kestrel-oluapp
             echo "✅ App restarted successfully"
-            echo "Service Deployed Smoothly"
           EOF
