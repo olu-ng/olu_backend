@@ -64,9 +64,7 @@
 #           EOF
 
 
-
-
-name: CI/CD - Deploy .NET Web API to Windows Server
+name: CI/CD - Deploy .NET Web API to Windows Server (Port 5044)
 
 on:
   push:
@@ -78,42 +76,66 @@ jobs:
 
     steps:
     - name: 🔄 Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: 🧱 Setup .NET SDK
+    - name: 🧱 Setup .NET 9 SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: '9.0.x'
 
     - name: ⚙️ Restore dependencies
       run: dotnet restore
 
     - name: 🏗️ Build solution
-      run: dotnet build --configuration Release
+      run: dotnet build --configuration Release --no-restore
+
+    - name: 🧪 Run tests
+      run: dotnet test --no-build --verbosity normal
 
     - name: 🚀 Publish Web API
       run: dotnet publish -c Release -o publish
 
-    - name: 📦 Zip output
+    - name: 📦 Zip published output
       run: Compress-Archive -Path publish\* -DestinationPath build.zip
 
-    - name: 🔐 Deploy to Windows Server (Dynamic Path)
+    - name: 🔐 Deploy to Windows Server + Bind to 5044
       shell: pwsh
       run: |
         $deployPath = "${{ secrets.WINDOWS_DEPLOY_PATH }}"
         $zipPath = Join-Path $deployPath "build.zip"
+        $dllName = "Olu.dll"  # ❗ Replace if your .dll is named differently
+        $bindIP = "${{ secrets.WINDOWS_HOST }}"  # Lightsail public IP
+        $port = 5044
 
         $secpasswd = ConvertTo-SecureString "${{ secrets.WINDOWS_PASSWORD }}" -AsPlainText -Force
         $cred = New-Object System.Management.Automation.PSCredential ("${{ secrets.WINDOWS_USER }}", $secpasswd)
-        $session = New-PSSession -ComputerName "${{ secrets.WINDOWS_HOST }}" -Credential $cred -UseSSL -Port 5986
+        $sessionOptions = New-PSSessionOption -SkipCACheck -SkipCNCheck
+
+        $session = New-PSSession -ComputerName $bindIP `
+                                 -Credential $cred `
+                                 -UseSSL `
+                                 -Port 5986 `
+                                 -SessionOption $sessionOptions
 
         Copy-Item -Path build.zip -Destination $zipPath -ToSession $session
 
         Invoke-Command -Session $session -ScriptBlock {
-          param($deployPath)
+          param($deployPath, $dllName, $bindIP, $port)
+          
           $zipFile = Join-Path $deployPath "build.zip"
+          $exePath = Join-Path $deployPath $dllName
+
           Expand-Archive -Path $zipFile -DestinationPath $deployPath -Force
           Remove-Item $zipFile
-        } -ArgumentList $deployPath
+
+          # Kill existing matching process
+          Get-Process -Name "dotnet" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Path -like "*$dllName*" } |
+            Stop-Process -Force
+
+          # Launch and bind to specific IP:Port
+          $env:ASPNETCORE_URLS = "http://$bindIP`:$port"
+          Start-Process -FilePath "dotnet" -ArgumentList "`"$exePath`"" -WorkingDirectory $deployPath
+        } -ArgumentList $deployPath, $dllName, $bindIP, $port
 
         Remove-PSSession $session
