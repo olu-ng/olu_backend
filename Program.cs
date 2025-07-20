@@ -270,7 +270,7 @@ app.UseSwaggerUI(c =>
 });
 
 // 6) Kestrel listening and middleware
-app.Urls.Add("http://+:80");
+//app.Urls.Add("http://+:80");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
