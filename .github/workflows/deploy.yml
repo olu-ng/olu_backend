@@ -1,141 +1,141 @@
-﻿# name: .NET CI/CD Pipeline
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-
-# jobs:
-#   build-and-deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: 🧾 Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: 🛠️ Setup .NET SDK
-#         uses: actions/setup-dotnet@v4
-#         with:
-#           dotnet-version: '9.0.x'
-
-#       - name: 📦 Restore dependencies
-#         run: dotnet restore
-
-#       - name: 🔨 Build (Local Check)
-#         run: dotnet build --configuration Release --no-restore
-
-#       - name: 🧪 Run tests
-#         run: dotnet test --no-build --verbosity normal
-
-#       - name: 🚀 Deploy Full Source to Lightsail & Restart App
-#         run: |
-#           echo "🔐 Setting up SSH key"
-#           mkdir -p ~/.ssh
-#           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
-#           chmod 600 ~/.ssh/id_rsa
-
-#           echo "📁 Ensuring remote source directory exists"
-#           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
-#             "sudo mkdir -p /opt/olu_backend/source && sudo chown -R \$USER:\$USER /opt/olu_backend"
-
-#           echo "📤 Uploading full project to server"
-#           rsync -avz --exclude 'bin' --exclude 'obj' --exclude '.git' \
-#             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ \
-#             ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/source/
-
-#           echo "🌀 Building & restarting on server"
-#           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-#             set -e
-#             cd /opt/olu_backend/source
-
-#             echo "🔄 Restoring & building"
-#             dotnet restore
-#             dotnet build --configuration Release
-
-#             echo "📦 Running EF migration (if any)"
-#             dotnet ef database update || echo "⚠️ Skipped migration"
-
-#             echo "🚦 Restarting kestrel-oluapp service"
-#             sudo systemctl stop kestrel-oluapp || true
-#             sudo systemctl daemon-reexec
-#             sudo systemctl restart kestrel-oluapp
-#             echo "✅ App restarted successfully"
-#           EOF
-
-
-name: CI/CD - Deploy .NET Web API to Windows Server (Port 5044)
+﻿name: .NET CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-    - name: 🔄 Checkout code
-      uses: actions/checkout@v4
+      - name: 🧾 Checkout code
+        uses: actions/checkout@v4
 
-    - name: 🧱 Setup .NET 9 SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
+      - name: 🛠️ Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
-    - name: ⚙️ Restore dependencies
-      run: dotnet restore
+      - name: 📦 Restore dependencies
+        run: dotnet restore
 
-    - name: 🏗️ Build solution
-      run: dotnet build --configuration Release --no-restore
+      - name: 🔨 Build (Local Check)
+        run: dotnet build --configuration Release --no-restore
 
-    - name: 🧪 Run tests
-      run: dotnet test --no-build --verbosity normal
+      - name: 🧪 Run tests
+        run: dotnet test --no-build --verbosity normal
 
-    - name: 🚀 Publish Web API
-      run: dotnet publish -c Release -o publish
+      - name: 🚀 Deploy Full Source to Lightsail & Restart App
+        run: |
+          echo "🔐 Setting up SSH key"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-    - name: 📦 Zip published output
-      run: Compress-Archive -Path publish\* -DestinationPath build.zip
+          echo "📁 Ensuring remote source directory exists"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
+            "sudo mkdir -p /opt/olu_backend/source && sudo chown -R \$USER:\$USER /opt/olu_backend"
 
-    - name: 🔐 Deploy to Windows Server + Bind to 5044
-      shell: pwsh
-      run: |
-        $deployPath = "${{ secrets.WINDOWS_DEPLOY_PATH }}"
-        $zipPath = Join-Path $deployPath "build.zip"
-        $dllName = "Olu.dll"  # ❗ Replace if your .dll is named differently
-        $bindIP = "${{ secrets.WINDOWS_HOST }}"  # Lightsail public IP
-        $port = 5044
+          echo "📤 Uploading full project to server"
+          rsync -avz --exclude 'bin' --exclude 'obj' --exclude '.git' \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/source/
 
-        $secpasswd = ConvertTo-SecureString "${{ secrets.WINDOWS_PASSWORD }}" -AsPlainText -Force
-        $cred = New-Object System.Management.Automation.PSCredential ("${{ secrets.WINDOWS_USER }}", $secpasswd)
-        $sessionOptions = New-PSSessionOption -SkipCACheck -SkipCNCheck
+          echo "🌀 Building & restarting on server"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+            set -e
+            cd /opt/olu_backend/source
 
-        $session = New-PSSession -ComputerName $bindIP `
-                                 -Credential $cred `
-                                 -UseSSL `
-                                 -Port 5986 `
-                                 -SessionOption $sessionOptions
+            echo "🔄 Restoring & building"
+            dotnet restore
+            dotnet build --configuration Release
 
-        Copy-Item -Path build.zip -Destination $zipPath -ToSession $session
+            echo "📦 Running EF migration (if any)"
+            dotnet ef database update || echo "⚠️ Skipped migration"
 
-        Invoke-Command -Session $session -ScriptBlock {
-          param($deployPath, $dllName, $bindIP, $port)
+            echo "🚦 Restarting kestrel-oluapp service"
+            sudo systemctl stop kestrel-oluapp || true
+            sudo systemctl daemon-reexec
+            sudo systemctl restart kestrel-oluapp
+            echo "✅ App restarted successfully"
+          EOF
+
+
+# name: CI/CD - Deploy .NET Web API to Windows Server (Port 5044)
+
+# on:
+#   push:
+#     branches: [main]
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: windows-latest
+
+#     steps:
+#     - name: 🔄 Checkout code
+#       uses: actions/checkout@v4
+
+#     - name: 🧱 Setup .NET 9 SDK
+#       uses: actions/setup-dotnet@v4
+#       with:
+#         dotnet-version: '9.0.x'
+
+#     - name: ⚙️ Restore dependencies
+#       run: dotnet restore
+
+#     - name: 🏗️ Build solution
+#       run: dotnet build --configuration Release --no-restore
+
+#     - name: 🧪 Run tests
+#       run: dotnet test --no-build --verbosity normal
+
+#     - name: 🚀 Publish Web API
+#       run: dotnet publish -c Release -o publish
+
+#     - name: 📦 Zip published output
+#       run: Compress-Archive -Path publish\* -DestinationPath build.zip
+
+#     - name: 🔐 Deploy to Windows Server + Bind to 5044
+#       shell: pwsh
+#       run: |
+#         $deployPath = "${{ secrets.WINDOWS_DEPLOY_PATH }}"
+#         $zipPath = Join-Path $deployPath "build.zip"
+#         $dllName = "Olu.dll"  ❗ Replace if your .dll is named differently
+#         $bindIP = "${{ secrets.WINDOWS_HOST }}"  Lightsail public IP
+#         $port = 5044
+
+#         $secpasswd = ConvertTo-SecureString "${{ secrets.WINDOWS_PASSWORD }}" -AsPlainText -Force
+#         $cred = New-Object System.Management.Automation.PSCredential ("${{ secrets.WINDOWS_USER }}", $secpasswd)
+#         $sessionOptions = New-PSSessionOption -SkipCACheck -SkipCNCheck
+
+#         $session = New-PSSession -ComputerName $bindIP `
+#                                  -Credential $cred `
+#                                  -UseSSL `
+#                                  -Port 5986 `
+#                                  -SessionOption $sessionOptions
+
+#         Copy-Item -Path build.zip -Destination $zipPath -ToSession $session
+
+#         Invoke-Command -Session $session -ScriptBlock {
+#           param($deployPath, $dllName, $bindIP, $port)
           
-          $zipFile = Join-Path $deployPath "build.zip"
-          $exePath = Join-Path $deployPath $dllName
+#           $zipFile = Join-Path $deployPath "build.zip"
+#           $exePath = Join-Path $deployPath $dllName
 
-          Expand-Archive -Path $zipFile -DestinationPath $deployPath -Force
-          Remove-Item $zipFile
+#           Expand-Archive -Path $zipFile -DestinationPath $deployPath -Force
+#           Remove-Item $zipFile
 
-          # Kill existing matching process
-          Get-Process -Name "dotnet" -ErrorAction SilentlyContinue |
-            Where-Object { $_.Path -like "*$dllName*" } |
-            Stop-Process -Force
+#           Kill existing matching process
+#           Get-Process -Name "dotnet" -ErrorAction SilentlyContinue |
+#             Where-Object { $_.Path -like "*$dllName*" } |
+#             Stop-Process -Force
 
-          # Launch and bind to specific IP:Port
-          $env:ASPNETCORE_URLS = "http://$bindIP`:$port"
-          Start-Process -FilePath "dotnet" -ArgumentList "`"$exePath`"" -WorkingDirectory $deployPath
-        } -ArgumentList $deployPath, $dllName, $bindIP, $port
+#           Launch and bind to specific IP:Port
+#           $env:ASPNETCORE_URLS = "http://$bindIP`:$port"
+#           Start-Process -FilePath "dotnet" -ArgumentList "`"$exePath`"" -WorkingDirectory $deployPath
+#         } -ArgumentList $deployPath, $dllName, $bindIP, $port
 
-        Remove-PSSession $session
+#         Remove-PSSession $session

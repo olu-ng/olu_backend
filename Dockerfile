@@ -1,27 +1,26 @@
-﻿# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+﻿# Use the ASP.NET 9 runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 80
+ENV ASPNETCORE_URLS=http://+:80
+
+# Build stage with the .NET SDK
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy csproj & restore
+# Copy project file and restore dependencies
+# Replace "OluBackendApp.csproj" with your actual .csproj filename if different
 COPY ["OluBackendApp.csproj", "./"]
-RUN dotnet restore
+RUN dotnet restore "OluBackendApp.csproj"
 
-# Copy everything else & publish
+# Copy all source code and publish
 COPY . .
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 
-# Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS final
+# Final image: copy the published output
+FROM base AS final
 WORKDIR /app
-
-# Install ICU (for full globalization) and timezones
-RUN apk add --no-cache icu-libs tzdata
-
-# Tell .NET to use ICU rather than invariant-only mode
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-
-# Copy the published output
 COPY --from=build /app/publish .
 
-# Launch the app
+# Run the application
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]

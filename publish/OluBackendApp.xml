@@ -1,0 +1,456 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>OluBackendApp</name>
+    </assembly>
+    <members>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.GetOwn">
+            <summary>Retrieve current artisan profile</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.Create(OluBackendApp.DTOs.ProfileCreateDto)">
+            <summary>Create artisan profile</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.Update(OluBackendApp.DTOs.ProfileUpdateDto)">
+            <summary>Replace artisan profile</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.Patch(OluBackendApp.DTOs.ProfilePatchDto)">
+            <summary>Partially update artisan profile</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.Delete">
+            <summary>Soft‑delete artisan profile</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.SaveAndValidateImage(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>Save/upload and validate image (≤5 MB, image/*)</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.ArtisanProfileController.MapToDto(OluBackendApp.Models.ApplicationUser,OluBackendApp.Models.ArtisanProfile)">
+            <summary>Map entity → DTO</summary>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.Register(OluBackendApp.DTOs.RegisterDto)">
+             <summary>
+             Registers a new user, creates their profile, and sends a registration OTP.
+             </summary>
+             <remarks>
+             Sample request:
+             
+                 POST /api/auth/register
+                 {
+                     "email": "user@example.com",
+                     "password": "P@ssw0rd!",
+                     "confirmPassword": "P@ssw0rd!",
+                     "role": "Artisan"
+                 }
+            
+             Valid values for <c>role</c>:
+             - "Artisan"
+             - "OfficeOwner"
+             - "Admin"
+             - "SuperAdmin"
+             </remarks>
+             <param name="dto">The user’s registration details.</param>
+             <returns>
+             Returns a <see cref="T:OluBackendApp.DTOs.RegisterResponseDto"/> indicating that an OTP was sent.
+             </returns>
+             <response code="200">Registration accepted; OTP has been sent.</response>
+             <response code="400">Invalid request (validation errors).</response>
+             <response code="409">Email already registered.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.VerifyRegistration(OluBackendApp.DTOs.OtpVerifyDto)">
+             <summary>
+             Verifies the registration OTP, confirms the user’s email, and records the device fingerprint.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/verify-registration
+                 {
+                     "email": "user@example.com",
+                     "code": "123456"
+                 }
+            
+             This endpoint checks the OTP under the <c>Registration</c> purpose.  
+             If the OTP is valid and the device fingerprint matches (or is first‐time),  
+             it marks <c>EmailConfirmed = true</c> and saves the fingerprint.
+             </remarks>
+             <param name="dto">The email and OTP code to verify.</param>
+             <returns>
+             Returns an <see cref="T:OluBackendApp.DTOs.OtpVerifyResponseDto"/> indicating success or failure,
+             along with the next step for the client.
+             </returns>
+             <response code="200">OTP verified successfully.</response>
+             <response code="400">Invalid request or OTP.</response>
+             <response code="403">Device fingerprint mismatch detected.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.VerifyDevice(OluBackendApp.DTOs.OtpVerifyDto)">
+             <summary>
+             Verifies the OTP for a new device login and records the device fingerprint.
+             </summary>
+             <remarks>
+             Sample request:
+             
+                 POST /api/auth/verify-device
+                 {
+                     "email": "user@example.com",
+                     "code": "123456"
+                 }
+            
+             This endpoint checks the OTP under the <c>NewDevice</c> purpose.  
+             On success, the user’s <c>LastDeviceFingerprint</c> is updated so future logins from this device are recognized.
+             </remarks>
+             <param name="dto">Contains the user’s email and the OTP code sent for new‑device verification.</param>
+             <returns>
+             Returns a <see cref="T:OluBackendApp.DTOs.VerifyDeviceResponseDto"/> indicating success and the next step.
+             </returns>
+             <response code="200">OTP verified; device fingerprint recorded.</response>
+             <response code="400">Invalid request or OTP.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.VerifyForgot(OluBackendApp.DTOs.OtpVerifyDto)">
+             <summary>
+             Verifies the OTP for a forgot‑password request and issues a password reset token.
+             </summary>
+             <remarks>
+             Sample request:
+             
+                 POST /api/auth/verify-forgot
+                 {
+                     "email": "user@example.com",
+                     "code": "123456"
+                 }
+            
+             This endpoint validates the OTP under the <c>ForgotPassword</c> purpose.  
+             On success, it returns a short‑lived reset token which the client uses with the /reset-password endpoint.
+             </remarks>
+             <param name="dto">Contains the user’s email and the OTP code sent for password reset.</param>
+             <returns>
+             Returns a <see cref="T:OluBackendApp.DTOs.VerifyForgotResponseDto"/> containing the reset token and the next step.
+             </returns>
+             <response code="200">OTP verified; reset token issued.</response>
+             <response code="400">Invalid request or OTP.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.Login(OluBackendApp.DTOs.LoginDto)">
+             <summary>
+             Authenticates a user. If the device is unrecognized, sends a new‐device OTP instead of issuing a token.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/login
+                 {
+                     "email": "user@example.com",
+                     "password": "P@ssw0rd!"
+                 }
+            
+             If the user logs in from a new device, an OTP will be sent and the response will indicate the next step.
+             Otherwise, a JWT will be returned in the response.
+             </remarks>
+             <param name="dto">The user credentials for login.</param>
+             <returns>
+             <see cref="T:OluBackendApp.DTOs.LoginResponseDto"/> containing either OTP instructions or the JWT and user details.
+             </returns>
+             <response code="200">
+             Returns a <see cref="T:OluBackendApp.DTOs.LoginResponseDto"/> indicating success (with token) or OTP required.
+             </response>
+             <response code="400">Request validation failed.</response>
+             <response code="401">Invalid credentials.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.ForgotPassword(OluBackendApp.DTOs.ForgotDto)">
+             <summary>
+             Sends an OTP for a password reset request without revealing if the email exists.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/forgot-password
+                 {
+                     "email": "user@example.com"
+                 }
+            
+             This endpoint will always return a 200 response with instructions,  
+             ensuring attackers cannot probe for valid email addresses.
+             </remarks>
+             <param name="dto">The user’s email for which to send the reset OTP.</param>
+             <returns>
+             Returns a <see cref="T:OluBackendApp.DTOs.ForgotPasswordResponseDto"/> indicating that an OTP has been sent if the account exists.
+             </returns>
+             <response code="200">OTP request accepted; check your email.</response>
+             <response code="400">Invalid request data.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.ResetPassword(OluBackendApp.DTOs.ResetPasswordDto)">
+             <summary>
+             Resets a user’s password using a valid OTP-issued reset token or generates one if missing.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/reset-password
+                 {
+                     "email": "user@example.com",
+                     "newPassword": "NewP@ssw0rd!",
+                     "resetToken": "optional-reset-token"
+                 }
+            
+             If <c>resetToken</c> is provided (from <c>verify-forgot</c>), it is used;  
+             otherwise, a fresh Identity password‑reset token is generated and applied.
+             </remarks>
+             <param name="dto">Contains the user’s email, desired new password, and optional reset token.</param>
+             <returns>
+             Returns a <see cref="T:OluBackendApp.DTOs.GenericResponseDto"/> indicating success or failure.
+             </returns>
+             <response code="200">Password reset successful.</response>
+             <response code="400">Invalid request, user not found, or reset token invalid.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.ChangePassword(OluBackendApp.DTOs.ChangeDto)">
+             <summary>
+             Changes the authenticated user’s password after verifying their current password.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/change-password
+                 {
+                     "currentPassword": "OldP@ssw0rd!",
+                     "newPassword": "NewP@ssw0rd!"
+                 }
+            
+             This endpoint requires a valid JWT. It will return an error if the current password is incorrect.
+             </remarks>
+             <param name="dto">Contains the user’s current and new passwords.</param>
+             <returns>
+             A <see cref="T:OluBackendApp.DTOs.GenericResponseDto"/> indicating whether the password change was successful.
+             </returns>
+             <response code="200">Password changed successfully.</response>
+             <response code="400">Invalid request data or current password incorrect.</response>
+             <response code="401">Authentication failed or missing.</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.ResendOtp(OluBackendApp.DTOs.ResendOtpRequestDto)">
+             <summary>
+             Resend an OTP code for verification flows (e.g., registration, forgot password, or new device login).
+             </summary>
+             <remarks>
+             Sample request:
+             
+                 POST /api/auth/resend-otp
+                 {
+                     "email": "user@example.com",
+                     "whyResentOtp": "forgot"
+                 }
+            
+             Valid values for <c>whyResentOtp</c>:
+             - "Forgot" for password reset
+             - "new-device" for login from a new device
+             - "registration" for login from a new device
+             - any other value will default to registration
+             </remarks>
+             <param name="dto">The email and reason for resending OTP.</param>
+             <returns>Returns a message indicating that the OTP was resent and the next step for the user.</returns>
+             <response code="200">OTP resent successfully</response>
+             <response code="400">Invalid request</response>
+        </member>
+        <member name="M:OluBackendApp.Controllers.AuthController.Logout">
+             <summary>
+             Logs out the current user by invalidating all existing tokens.
+             </summary>
+             <remarks>
+             Sample request:
+            
+                 POST /api/auth/logout
+                 Authorization: Bearer &lt;access_token&gt;
+            
+             This endpoint bumps the user’s security stamp so that any previously issued JWTs
+             and refresh tokens become invalid. The user will need to log in again to obtain new tokens.
+             </remarks>
+             <returns>
+             A <see cref="T:OluBackendApp.DTOs.LogoutResponseDto"/> confirming the logout.
+             </returns>
+             <response code="200">Logout successful.</response>
+             <response code="401">Unauthorized if no valid JWT is provided.</response>
+        </member>
+        <member name="T:OluBackendApp.DTOs.AdminCreateOfficeOwnerDto">
+            <summary>
+            Payload for POST /api/admin/officeowners
+            </summary>
+        </member>
+        <member name="M:OluBackendApp.DTOs.AdminCreateOfficeOwnerDto.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Payload for POST /api/admin/officeowners
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.DTOs.AdminUpdateOfficeOwnerDto">
+            <summary>
+            Payload for PUT /api/admin/officeowners/{id}
+            </summary>
+        </member>
+        <member name="M:OluBackendApp.DTOs.AdminUpdateOfficeOwnerDto.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Payload for PUT /api/admin/officeowners/{id}
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.DTOs.AdminPatchOfficeOwnerDto">
+            <summary>
+            Payload for PATCH /api/admin/officeowners/{id}
+            </summary>
+        </member>
+        <member name="M:OluBackendApp.DTOs.AdminPatchOfficeOwnerDto.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Payload for PATCH /api/admin/officeowners/{id}
+            </summary>
+        </member>
+        <member name="P:OluBackendApp.DTOs.ForgotPasswordResponseDto.RequiresOtp">
+            <summary>
+            Always true in the response, to avoid leaking whether the email exists.
+            </summary>
+        </member>
+        <member name="P:OluBackendApp.DTOs.ForgotPasswordResponseDto.Message">
+            <summary>
+            A generic message so that attackers can’t probe for valid emails.
+            </summary>
+        </member>
+        <member name="P:OluBackendApp.DTOs.ForgotPasswordResponseDto.NextStep">
+            <summary>
+            Client should call this next to verify the OTP.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.DTOs.ResetPasswordDto">
+            <summary>
+            Payload for resetting a password: includes optional reset token.
+            </summary>
+        </member>
+        <member name="M:OluBackendApp.DTOs.ResetPasswordDto.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Payload for resetting a password: includes optional reset token.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.DTOs.UserProfileDto">
+            <summary>
+            Profile data returned for the current user.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:OluBackendApp.Migrations.fvb">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.fvb.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.fvb.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.fvb.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:OluBackendApp.Migrations.core">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.core.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.core.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.core.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:OluBackendApp.Migrations.InitialCreatesd">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreatesd.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreatesd.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.InitialCreatesd.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:OluBackendApp.Migrations.FixBlockRelationships">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.FixBlockRelationships.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.FixBlockRelationships.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.FixBlockRelationships.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:OluBackendApp.Migrations.hb">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.hb.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.hb.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:OluBackendApp.Migrations.hb.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.LastDeviceFingerprint">
+            <summary>Fingerprint of last verified device (for OTP, etc.).</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.CurrentStatus">
+            <summary>Current presence: online/offline/away.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.LastSeenAt">
+            <summary>Last time we saw them online.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.ChatsInitiated">
+            <summary>Chats started by this user.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.ChatsReceived">
+            <summary>Chats where this user is the recipient.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.MessagesSent">
+            <summary>All messages this user has sent.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.ReactionsMade">
+            <summary>All reactions this user has made.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.ThreadsCreated">
+            <summary>All threads this user has started (if you model that).</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.BlocksMade">
+            <summary>Users this user has blocked.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.ApplicationUser.BlockedBy">
+            <summary>Users who have blocked this user.</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.OfficeOwnerProfile.ProfilePictureUrl">
+            <summary>URL to the profile picture (max 2048 chars).</summary>
+        </member>
+        <member name="P:OluBackendApp.Models.OfficeOwnerProfile.PhoneNumbers">
+            <summary>Stored as a JSON array in the database (requires provider support).</summary>
+        </member>
+        <member name="T:OluBackendApp.Services.IRefreshTokenService">
+            <summary>
+            Manages refresh token lifecycle: validation, generation, and storage.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.Services.RefreshTokenService">
+            <summary>
+            Simple implementation using in-memory store; replace with persistent DB for production.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.Services.ITokenService">
+            <summary>
+            Extracts ClaimsPrincipal from an expired JWT token.
+            </summary>
+        </member>
+        <member name="T:OluBackendApp.Services.TokenService">
+            <summary>
+            Implementation of ITokenService.
+            </summary>
+        </member>
+    </members>
+</doc>

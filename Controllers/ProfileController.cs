@@ -1,145 +1,147 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using OluBackendApp.Data;
-using OluBackendApp.Models;
+﻿// NOT NEEDED ANY MORE
 
-namespace OluBackendApp.Controllers
-{
-    [ApiController]
-    [Route("api/profile")]
-    [Authorize]
-    public class ProfileController : ControllerBase
-    {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ApplicationDbContext _db;
+//using System.Linq;
+//using System.Threading.Tasks;
+//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Identity;
+//using Microsoft.AspNetCore.Mvc;
+//using OluBackendApp.Data;
+//using OluBackendApp.Models;
 
-        public ProfileController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext db)
-        {
-            _userManager = userManager;
-            _db = db;
-        }
+//namespace OluBackendApp.Controllers
+//{
+//    [ApiController]
+//    [Route("api/profile")]
+//    [Authorize]
+//    public class ProfileController : ControllerBase
+//    {
+//        private readonly UserManager<ApplicationUser> _userManager;
+//        private readonly ApplicationDbContext _db;
 
-        /// <summary>
-        /// GET api/profile
-        /// Returns the current user's profile (Artisan or OfficeOwner).
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetProfile()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized();
+//        public ProfileController(
+//            UserManager<ApplicationUser> userManager,
+//            ApplicationDbContext db)
+//        {
+//            _userManager = userManager;
+//            _db = db;
+//        }
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault();
+//        /// <summary>
+//        /// GET api/profile
+//        /// Returns the current user's profile (Artisan or OfficeOwner).
+//        /// </summary>
+//        [HttpGet]
+//        public async Task<IActionResult> GetProfile()
+//        {
+//            var user = await _userManager.GetUserAsync(User);
+//            if (user == null)
+//                return Unauthorized();
 
-            return role switch
-            {
-                Roles.Artisan => await GetArtisanProfile(user.Id, user.Email!),
-                Roles.OfficeOwner => await GetOfficeOwnerProfile(user.Id, user.Email!),
-                _ => BadRequest("Profile not supported for this role.")
-            };
-        }
+//            var roles = await _userManager.GetRolesAsync(user);
+//            var role = roles.FirstOrDefault();
 
-        /// <summary>
-        /// PUT api/profile
-        /// Updates the current user's profile fields.
-        /// </summary>
-        [HttpPut]
-        public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Unauthorized();
+//            return role switch
+//            {
+//                Roles.Artisan => await GetArtisanProfile(user.Id, user.Email!),
+//                Roles.OfficeOwner => await GetOfficeOwnerProfile(user.Id, user.Email!),
+//                _ => BadRequest("Profile not supported for this role.")
+//            };
+//        }
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault();
+//        /// <summary>
+//        /// PUT api/profile
+//        /// Updates the current user's profile fields.
+//        /// </summary>
+//        [HttpPut]
+//        public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
+//        {
+//            var user = await _userManager.GetUserAsync(User);
+//            if (user == null)
+//                return Unauthorized();
 
-            switch (role)
-            {
-                case Roles.Artisan:
-                    var art = await _db.ArtisanProfiles.FindAsync(user.Id);
-                    if (art == null) return NotFound("Artisan profile not found.");
-                    art.ProfilePictureUrl = dto.ProfilePictureUrl;
-                    art.Address = dto.Address;
-                    art.PhoneNumber = dto.PhoneNumber;
-                    art.State = dto.State;
-                    break;
+//            var roles = await _userManager.GetRolesAsync(user);
+//            var role = roles.FirstOrDefault();
 
-                case Roles.OfficeOwner:
-                    var off = await _db.OfficeOwnerProfiles.FindAsync(user.Id);
-                    if (off == null) return NotFound("OfficeOwner profile not found.");
-                    off.ProfilePictureUrl = dto.ProfilePictureUrl;
-                    off.Address = dto.Address;
-                    off.PhoneNumber = dto.PhoneNumber;
-                    off.State = dto.State;
-                    break;
+//            switch (role)
+//            {
+//                case Roles.Artisan:
+//                    var art = await _db.ArtisanProfiles.FindAsync(user.Id);
+//                    if (art == null) return NotFound("Artisan profile not found.");
+//                    art.ProfilePictureUrl = dto.ProfilePictureUrl;
+//                    art.Address = dto.Address;
+//                    art.PhoneNumber = dto.PhoneNumber;
+//                    art.State = dto.State;
+//                    break;
 
-                default:
-                    return BadRequest("Profile not supported for this role.");
-            }
+//                case Roles.OfficeOwner:
+//                    var off = await _db.OfficeOwnerProfiles.FindAsync(user.Id);
+//                    if (off == null) return NotFound("OfficeOwner profile not found.");
+//                    off.ProfilePictureUrl = dto.ProfilePictureUrl;
+//                    off.Address = dto.Address;
+//                    off.PhoneNumber = dto.PhoneNumber;
+//                    off.State = dto.State;
+//                    break;
 
-            await _db.SaveChangesAsync();
-            return NoContent();
-        }
+//                default:
+//                    return BadRequest("Profile not supported for this role.");
+//            }
 
-        // ——— Helpers for GET ———
+//            await _db.SaveChangesAsync();
+//            return NoContent();
+//        }
 
-        private async Task<IActionResult> GetArtisanProfile(string userId, string email)
-        {
-            var p = await _db.ArtisanProfiles.FindAsync(userId);
-            if (p == null)
-                return NotFound("Artisan profile not found.");
+//        // ——— Helpers for GET ———
 
-            var dto = new ProfileDto(
-                Email: email,
-                Role: Roles.Artisan,
-                ProfilePictureUrl: p.ProfilePictureUrl ?? "",
-                Address: p.Address ?? "",
-                PhoneNumber: p.PhoneNumber ?? "",
-                State: p.State ?? ""
-            );
-            return Ok(dto);
-        }
+//        private async Task<IActionResult> GetArtisanProfile(string userId, string email)
+//        {
+//            var p = await _db.ArtisanProfiles.FindAsync(userId);
+//            if (p == null)
+//                return NotFound("Artisan profile not found.");
 
-        private async Task<IActionResult> GetOfficeOwnerProfile(string userId, string email)
-        {
-            var p = await _db.OfficeOwnerProfiles.FindAsync(userId);
-            if (p == null)
-                return NotFound("OfficeOwner profile not found.");
+//            var dto = new ProfileDto(
+//                Email: email,
+//                Role: Roles.Artisan,
+//                ProfilePictureUrl: p.ProfilePictureUrl ?? "",
+//                Address: p.Address ?? "",
+//                PhoneNumber: p.PhoneNumber ?? "",
+//                State: p.State ?? ""
+//            );
+//            return Ok(dto);
+//        }
 
-            var dto = new ProfileDto(
-                Email: email,
-                Role: Roles.OfficeOwner,
-                ProfilePictureUrl: p.ProfilePictureUrl ?? "",
-                Address: p.Address ?? "",
-                PhoneNumber: p.PhoneNumber ?? "",
-                State: p.State ?? ""
-            );
-            return Ok(dto);
-        }
+//        private async Task<IActionResult> GetOfficeOwnerProfile(string userId, string email)
+//        {
+//            var p = await _db.OfficeOwnerProfiles.FindAsync(userId);
+//            if (p == null)
+//                return NotFound("OfficeOwner profile not found.");
 
-        // ——— DTOs ———
+//            var dto = new ProfileDto(
+//                Email: email,
+//                Role: Roles.OfficeOwner,
+//                ProfilePictureUrl: p.ProfilePictureUrl ?? "",
+//                Address: p.Address ?? "",
+//                PhoneNumber: p.PhoneNumber ?? "",
+//                State: p.State ?? ""
+//            );
+//            return Ok(dto);
+//        }
 
-        public record ProfileDto(
-            string Email,
-            string Role,
-            string ProfilePictureUrl,
-            string Address,
-            string PhoneNumber,
-            string State
-        );
+//        // ——— DTOs ———
 
-        public record UpdateProfileDto(
-            string ProfilePictureUrl,
-            string Address,
-            string PhoneNumber,
-            string State
-        );
-    }
-}
+//        public record ProfileDto(
+//            string Email,
+//            string Role,
+//            string ProfilePictureUrl,
+//            string Address,
+//            string PhoneNumber,
+//            string State
+//        );
+
+//        public record UpdateProfileDto(
+//            string ProfilePictureUrl,
+//            string Address,
+//            string PhoneNumber,
+//            string State
+//        );
+//    }
+//}

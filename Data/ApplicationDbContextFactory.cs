@@ -18,7 +18,8 @@ namespace OluBackendApp.Data
             var connectionString = config.GetConnectionString("DefaultConnection");
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlite(connectionString); // ✅ CORRECT
+            // optionsBuilder.UseSqlite(connectionString); // ✅ CORRECT
+            optionsBuilder.UseSqlServer("Server=DESKTOP-VVPNE58\\SQLEXPRESS;Database=OluDBML;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;");
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }

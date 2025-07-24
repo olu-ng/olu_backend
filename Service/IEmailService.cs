@@ -152,7 +152,26 @@ namespace OluBackendApp.Services
                     : SecureSocketOptions.None;
 
             // 7) Send the email
+            //using var client = new SmtpClient();
+            //try
+            //{
+            //    await client.ConnectAsync(host, port, socketOption);
+            //    await client.AuthenticateAsync(user, pass);
+            //    await client.SendAsync(message);
+            //    await client.DisconnectAsync(true);
+            //}
+            //catch (Exception ex)
+            //{
+            //    // Wrap for clarity
+            //    throw new InvalidOperationException("Failed to send email. See inner exception for details.", ex);
+            //}
+
+            // Inside your SendAsync method, before ConnectAsync
             using var client = new SmtpClient();
+
+            // DEV ONLY: Accept all certificates — REMOVE in production!
+            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
             try
             {
                 await client.ConnectAsync(host, port, socketOption);
@@ -162,7 +181,6 @@ namespace OluBackendApp.Services
             }
             catch (Exception ex)
             {
-                // Wrap for clarity
                 throw new InvalidOperationException("Failed to send email. See inner exception for details.", ex);
             }
         }

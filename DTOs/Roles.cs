@@ -1,5 +1,5 @@
 ﻿
-namespace OluBackendApp.Models
+namespace OluBackendApp.DTOs
 {
     public static class Roles
     {

@@ -1,32 +1,45 @@
 ﻿using OluBackendApp.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Metrics;
+using System;
+using System.Collections.Generic;
+
+
 namespace OluBackendApp.Models
 {
     public class ArtisanProfile
     {
-        //public int Id { get; set; }
-        //public string UserId { get; set; } = default!;
-        //public ApplicationUser User { get; set; } = default!;
-        //public string? ProfilePictureUrl { get; set; }
-        //public string? Address { get; set; }
-        //public string? PhoneNumber { get; set; }
-        //public string? State { get; set; }
+        [Key, ForeignKey(nameof(User))]
+        public string UserId { get; set; } = default!;
+        public ApplicationUser User { get; set; } = default!;
 
+        // Personal
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public Gender? Gender { get; set; }
+        public StateOfOrigin? StateOfOrigin { get; set; }
+        public string? ZipCode { get; set; }
+        public string? StateOfResidence { get; set; }
+        public Country? Country { get; set; }
 
-       
-            //[Key]
-            public int Id { get; set; }
-            public string UserId { get; set; } = default!;
+        // Professional
+        public string? Profession { get; set; }
+        public int? YearsOfExperience { get; set; }
+        public List<string>? ServicesOffered { get; set; }
+        public string? AboutYou { get; set; }
+        public List<string>? ProfessionTags { get; set; }
 
-            public ApplicationUser User { get; set; } = default!;
+        // Contact
+        public List<string>? PhoneNumbers { get; set; }
+        public string? Address { get; set; }
 
-            public string? ProfilePictureUrl { get; set; }
-            public string? Address { get; set; }
-            public string? PhoneNumber { get; set; }
-            public string? State { get; set; }
-        
+        // Avatar
+        public string? ProfilePictureUrl { get; set; }
 
-
-
+        // Soft‑delete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
     }
 }
