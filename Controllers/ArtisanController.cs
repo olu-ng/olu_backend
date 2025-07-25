@@ -33,6 +33,14 @@ namespace OluBackendApp.Controllers
             _env = env;
         }
 
+        [HttpGet("test")]
+        [AllowAnonymous]
+        public IActionResult Test()
+        {
+            Console.WriteLine("✅ /api/artisan/profile/test was hit.");
+            return Ok(new { status = "API is alive." });
+        }
+
         [HttpGet]
         [ProducesResponseType(typeof(ProfileDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -47,6 +55,8 @@ namespace OluBackendApp.Controllers
 
             return Ok(MapToDto(user, profile));
         }
+
+
 
         [HttpPost]
         [RequestSizeLimit(MAX_FILE_SIZE)]
@@ -91,6 +101,8 @@ namespace OluBackendApp.Controllers
             await _db.SaveChangesAsync();
             return Ok(MapToDto(user, profile));
         }
+
+
 
         [HttpPut]
         [RequestSizeLimit(MAX_FILE_SIZE)]

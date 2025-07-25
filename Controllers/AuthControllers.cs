@@ -1281,6 +1281,52 @@ namespace OluBackendApp.Controllers
         //    return new JwtSecurityTokenHandler().WriteToken(token);
         //}
 
+        //        private async Task<string> GenerateJwt(ApplicationUser user)
+        //        {
+        //            var section = _config.GetSection("Jwt");
+        //            var keyRaw = section["Key"];
+        //            var issuer = section["Issuer"];
+        //            var audience = section["Audience"];
+        //            var expireRaw = section["ExpireMinutes"];
+
+        //            if (string.IsNullOrWhiteSpace(keyRaw)
+        //             || string.IsNullOrWhiteSpace(issuer)
+        //             || string.IsNullOrWhiteSpace(audience)
+        //             || !int.TryParse(expireRaw, out var mins))
+        //            {
+        //                throw new InvalidOperationException(
+        //                    "Invalid JWT config. Ensure Key, Issuer, Audience, ExpireMinutes are set.");
+        //            }
+
+        //            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyRaw));
+        //            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        //            var roles = await _userManager.GetRolesAsync(user);
+
+        //            //        var claims = new List<Claim> {
+        //            //    new(JwtRegisteredClaimNames.Sub, user.Id),
+        //            //    new(ClaimTypes.NameIdentifier, user.Id), // ✅ Required for UserManager
+        //            //    new(JwtRegisteredClaimNames.Email, user.Email!)
+
+        //            //};
+        //            var claims = new List<Claim>
+        //{
+        //            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        //            new Claim(ClaimTypes.NameIdentifier, user.Id),   // required by UserManager
+        //            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+        //            new Claim(ClaimTypes.Role, userRole)             // ✅ THIS IS MISSING
+        //        };
+        //            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
+        //            var token = new JwtSecurityToken(
+        //                issuer: issuer,
+        //                audience: audience,
+        //                claims: claims,
+        //                expires: DateTime.UtcNow.AddMinutes(mins),
+        //                signingCredentials: creds);
+
+        //            return new JwtSecurityTokenHandler().WriteToken(token);
+        //        }
+
         private async Task<string> GenerateJwt(ApplicationUser user)
         {
             var section = _config.GetSection("Jwt");
@@ -1290,9 +1336,9 @@ namespace OluBackendApp.Controllers
             var expireRaw = section["ExpireMinutes"];
 
             if (string.IsNullOrWhiteSpace(keyRaw)
-             || string.IsNullOrWhiteSpace(issuer)
-             || string.IsNullOrWhiteSpace(audience)
-             || !int.TryParse(expireRaw, out var mins))
+                || string.IsNullOrWhiteSpace(issuer)
+                || string.IsNullOrWhiteSpace(audience)
+                || !int.TryParse(expireRaw, out var mins))
             {
                 throw new InvalidOperationException(
                     "Invalid JWT config. Ensure Key, Issuer, Audience, ExpireMinutes are set.");
@@ -1300,14 +1346,17 @@ namespace OluBackendApp.Controllers
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyRaw));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var roles = await _userManager.GetRolesAsync(user);
 
-            var claims = new List<Claim> {
-        new(JwtRegisteredClaimNames.Sub, user.Id),
-        new(ClaimTypes.NameIdentifier, user.Id), // ✅ Required for UserManager
-        new(JwtRegisteredClaimNames.Email, user.Email!)
+            var roles = await _userManager.GetRolesAsync(user);
+            var userRole = roles.FirstOrDefault() ?? throw new Exception("User has no role assigned.");
+
+            var claims = new List<Claim>
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        new Claim(ClaimTypes.NameIdentifier, user.Id), // Required by UserManager
+        new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+        new Claim(ClaimTypes.Role, userRole)           // ✅ Role claim for authorization
     };
-            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
@@ -1318,6 +1367,7 @@ namespace OluBackendApp.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
     }
 }

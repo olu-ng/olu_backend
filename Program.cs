@@ -145,7 +145,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
             // ✅ Set correct claim types for role and name matching
             RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
-            NameClaimType = JwtRegisteredClaimNames.Sub
+            //NameClaimType = JwtRegisteredClaimNames.Sub
+            NameClaimType = ClaimTypes.NameIdentifier
         };
         opts.Events = new JwtBearerEvents
         {
@@ -380,6 +381,22 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 app.UseCors("AllowLocalhost8081");
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        Console.WriteLine("✅ Authenticated User:");
+        foreach (var claim in context.User.Claims)
+        {
+            Console.WriteLine($" - {claim.Type}: {claim.Value}");
+        }
+    }
+    else
+    {
+        Console.WriteLine("🚫 Unauthenticated request");
+    }
+    await next();
+});
 app.UseAuthorization();
 
 // ------------------------------------------
