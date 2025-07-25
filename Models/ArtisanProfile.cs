@@ -20,7 +20,7 @@ namespace OluBackendApp.Models
         public DateOnly? DateOfBirth { get; set; }
         public Gender? Gender { get; set; }
         public Country? Country { get; set; }
-        public State? StateOfOrigin { get; set; }
+        public State? State { get; set; }
         public string? ZipCode { get; set; }
         
 
@@ -28,6 +28,7 @@ namespace OluBackendApp.Models
         public string? Profession { get; set; }
         public int? YearsOfExperience { get; set; }
         public List<string>? ServicesOffered { get; set; }
+        [MaxLength(4000)]
         public string? AboutYou { get; set; }
         public List<string>? ProfessionTags { get; set; }
 
