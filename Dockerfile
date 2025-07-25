@@ -10,7 +10,8 @@ WORKDIR /src
 
 # Copy project file and restore dependencies
 # Replace "OluBackendApp.csproj" with your actual .csproj filename if different
-COPY ["OluBackendApp.csproj", "./"]
+# COPY ["OluBackendApp.csproj", "./"]
+COPY . .
 RUN dotnet restore "OluBackendApp.csproj"
 
 # Copy all source code and publish
