@@ -147,6 +147,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
             NameClaimType = JwtRegisteredClaimNames.Sub
         };
+        opts.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"❌ Auth Failed: {ctx.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = ctx =>
+            {
+                Console.WriteLine($"🚫 Challenge: {ctx.Error} — {ctx.ErrorDescription}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = ctx =>
+            {
+                Console.WriteLine($"✅ Token validated for: {ctx.Principal.Identity?.Name}");
+                return Task.CompletedTask;
+            }
+        };
+
     });
 
 
