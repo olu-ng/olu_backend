@@ -12,7 +12,7 @@ WORKDIR /src
 COPY ["OluBackendApp.csproj", "./"]
 RUN dotnet restore "OluBackendApp.csproj"
 
-# Copy all source files (including config files) and publish
+# Copy all source files and publish
 COPY . .
 RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 
@@ -20,11 +20,11 @@ RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 
-# Copy all files including appsettings*.json
+# Copy published output
 COPY --from=build /app/publish .
 
-# Copy the config files manually to ensure they're present
-COPY ["appsettings.json", "appsettings.Production.json", "./"]
+# Manually copy appsettings.json only (safe and explicit)
+COPY appsettings.json ./
 
 # Run the application
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
