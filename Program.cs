@@ -22,6 +22,7 @@ using OluBackendApp.Services;
 using OluBackendApp.DTOs;
 using Newtonsoft.Json.Converters;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -110,6 +111,25 @@ var keyBytes = Encoding.UTF8.GetBytes(jwtSection["Key"]!);
 //        };
 //    });
 
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(opts =>
+//    {
+//        opts.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuerSigningKey = true,
+//            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+//            ValidateIssuer = true,
+//            ValidIssuer = jwtSection["Issuer"],
+//            ValidateAudience = true,
+//            ValidAudience = jwtSection["Audience"],
+//            ValidateLifetime = true,
+
+//            // ✅ Fix role mapping
+//            RoleClaimType = ClaimTypes.Role,
+//            NameClaimType = ClaimTypes.NameIdentifier
+//        };
+//    });
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>
     {
@@ -123,9 +143,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSection["Audience"],
             ValidateLifetime = true,
 
-            // ✅ Fix role mapping
-            RoleClaimType = ClaimTypes.Role,
-            NameClaimType = ClaimTypes.NameIdentifier
+            // ✅ Set correct claim types for role and name matching
+            RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+            NameClaimType = JwtRegisteredClaimNames.Sub
         };
     });
 
