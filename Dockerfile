@@ -9,19 +9,22 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project file and restore dependencies
-# Replace "OluBackendApp.csproj" with your actual .csproj filename if different
-# COPY ["OluBackendApp.csproj", "./"]
-COPY . .
+COPY ["OluBackendApp.csproj", "./"]
 RUN dotnet restore "OluBackendApp.csproj"
 
-# Copy all source code and publish
+# Copy all source files (including config files) and publish
 COPY . .
 RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 
 # Final image: copy the published output
 FROM base AS final
 WORKDIR /app
+
+# Copy all files including appsettings*.json
 COPY --from=build /app/publish .
+
+# Copy the config files manually to ensure they're present
+COPY ["appsettings.json", "appsettings.Production.json", "./"]
 
 # Run the application
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
