@@ -70,6 +70,23 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(opts =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    // Prevent redirect to /Account/Login
+    options.LoginPath = "/unauthorized"; // fallback, not used
+    options.AccessDeniedPath = "/unauthorized"; // fallback, not used
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
+});
 
 // ------------------------------------------
 // 3) JWT Authentication
