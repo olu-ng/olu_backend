@@ -1,4 +1,6 @@
-﻿# Use the ASP.NET 9 runtime image
+﻿
+
+# Use the ASP.NET 9 runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 80
@@ -9,22 +11,20 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project file and restore dependencies
-COPY ["OluBackendApp.csproj", "./"]
+# Replace "OluBackendApp.csproj" with your actual .csproj filename if different
+# COPY ["OluBackendApp.csproj", "./"]
+COPY . .
 RUN dotnet restore "OluBackendApp.csproj"
 
-# Copy all source files and publish
+# Copy all source code and publish
 COPY . .
 RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 
 # Final image: copy the published output
 FROM base AS final
 WORKDIR /app
-
-# Copy published output
 COPY --from=build /app/publish .
-
-# Manually copy appsettings.json only (safe and explicit)
-COPY appsettings.json ./
 
 # Run the application
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
+
