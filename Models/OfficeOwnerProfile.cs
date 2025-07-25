@@ -49,5 +49,8 @@ namespace OluBackendApp.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
+
+        // Job posts created by this Office Owner
+        public ICollection<JobPost> JobPosts { get; set; } = new List<JobPost>();
     }
 }

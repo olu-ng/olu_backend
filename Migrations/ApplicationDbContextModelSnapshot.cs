@@ -518,6 +518,43 @@ namespace OluBackendApp.Migrations
                     b.ToTable("ChatThreads");
                 });
 
+            modelBuilder.Entity("OluBackendApp.Models.JobPost", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Budget")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OfficeOwnerProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OfficeOwnerProfileId");
+
+                    b.ToTable("JobPosts");
+                });
+
             modelBuilder.Entity("OluBackendApp.Models.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -897,6 +934,18 @@ namespace OluBackendApp.Migrations
                     b.Navigation("ParentMessage");
                 });
 
+            modelBuilder.Entity("OluBackendApp.Models.JobPost", b =>
+                {
+                    b.HasOne("OluBackendApp.Models.OfficeOwnerProfile", "OfficeOwnerProfile")
+                        .WithMany("JobPosts")
+                        .HasForeignKey("OfficeOwnerProfileId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OfficeOwnerProfile");
+                });
+
             modelBuilder.Entity("OluBackendApp.Models.Message", b =>
                 {
                     b.HasOne("OluBackendApp.Models.ApplicationUser", null)
@@ -1024,6 +1073,11 @@ namespace OluBackendApp.Migrations
                     b.Navigation("Reactions");
 
                     b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("OluBackendApp.Models.OfficeOwnerProfile", b =>
+                {
+                    b.Navigation("JobPosts");
                 });
 #pragma warning restore 612, 618
         }

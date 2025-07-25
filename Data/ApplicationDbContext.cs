@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -28,6 +29,8 @@ namespace OluBackendApp.Data
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<PushSubscription> PushSubscriptions { get; set; }
+
+        public DbSet<JobPost> JobPosts { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
@@ -255,9 +258,20 @@ builder.Entity<Block>()
     .WithMany(u => u.BlocksInitiated)
     .HasForeignKey(b => b.BlockerId)
     .OnDelete(DeleteBehavior.Restrict)
-    .IsRequired();
+            .IsRequired();
 
-builder.Entity<Block>()
+            builder.Entity<OfficeOwnerProfile>()
+           .HasMany(o => o.JobPosts)
+           .WithOne(j => j.OfficeOwnerProfile)
+           .HasForeignKey(j => j.OfficeOwnerProfileId)
+           .HasPrincipalKey(o => o.Id) // 💥 this line fixes the error
+           .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<JobPost>()
+            .Property(j => j.Budget)
+            .HasPrecision(18, 2); // Or adjust as needed
+
+            builder.Entity<Block>()
     .HasOne(b => b.Blocked)
     .WithMany(u => u.BlocksReceived)
     .HasForeignKey(b => b.BlockedId)

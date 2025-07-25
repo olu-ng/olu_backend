@@ -181,9 +181,21 @@ var builder = WebApplication.CreateBuilder(args);
 // ------------------------------------------
 // 1) Kestrel port
 // ------------------------------------------
-builder.WebHost.ConfigureKestrel(opts =>
-    opts.ListenAnyIP(5000)
-);
+//builder.WebHost.ConfigureKestrel(opts =>
+//    opts.ListenAnyIP(5000)
+//);
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5000); // Only HTTP
+});
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(5000); // HTTP
+//    options.ListenAnyIP(5001, listenOptions =>
+//    {
+//        listenOptions.UseHttps(); // ✅ Enables HTTPS for Swagger UI
+//    });
+//});
 
 // ------------------------------------------
 // 2) EF Core & Identity
@@ -253,41 +265,100 @@ builder.Services.AddSignalR();
 // 6) Swagger + JWT in UI
 // ------------------------------------------
 builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen(opts =>
+//{
+//    // ✅ Prevent schema ID conflicts by using full type names
+//    opts.CustomSchemaIds(type => type.FullName);
+
+//    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+//    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+//    opts.IncludeXmlComments(xmlPath);
+
+//    opts.SwaggerDoc("v1", new OpenApiInfo
+//    {
+//        Title = "Olu App API",
+//        Version = "v1",
+//        Description = "API documentation for Olu App"
+//    });
+
+//    opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+//    {
+//        In = ParameterLocation.Header,
+//        Description = "Enter 'Bearer {token}'",
+//        Name = "Authorization",
+//        Type = SecuritySchemeType.ApiKey,
+//        Scheme = "Bearer"
+//    });
+
+//    opts.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Type = ReferenceType.SecurityScheme,
+//                    Id = "Bearer"
+//                }
+//            },
+//            Array.Empty<string>()
+//        }
+//    });
+//});
+
 builder.Services.AddSwaggerGen(opts =>
 {
+    // Prevent schema ID conflicts by using full type names
+    opts.CustomSchemaIds(type => type.FullName);
+
+    // XML documentation file path (auto from project name)
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    opts.IncludeXmlComments(xmlPath);
+    opts.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
+    // Swagger UI info
     opts.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Olu App API",
         Version = "v1",
-        Description = "API documentation for Olu App"
+        Description = "API documentation for Olu App",
+        Contact = new OpenApiContact
+        {
+            Name = "Alpha Global Dev Team",
+            Email = "support@alpha-global.org"
+        }
     });
 
+    // JWT Bearer token authentication
     opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        In = ParameterLocation.Header,
-        Description = "Enter 'Bearer {token}'",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
         Name = "Authorization",
+        In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+
+    // Require token in all endpoints
     opts.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference {
+                Reference = new OpenApiReference
+                {
                     Type = ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
-                }
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
             },
-            Array.Empty<string>()
+            new List<string>() // ← No scopes required
         }
     });
 });
+
 
 // ------------------------------------------
 // 7) App services
@@ -378,6 +449,8 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Olu App API V1");
     c.RoutePrefix = string.Empty;
 });
+
+
 
 // ------------------------------------------
 // 16) Map controllers & hubs
