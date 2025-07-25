@@ -31,6 +31,7 @@ services:
         User Id=sa;
         Password=Your_password123;
         TrustServerCertificate=True;
+         
     ports:
       - "8080:80"
       - "5000:5000"
