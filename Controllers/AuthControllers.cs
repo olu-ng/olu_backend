@@ -654,6 +654,7 @@ namespace OluBackendApp.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
+            var email = dto.Email?.Trim().ToLowerInvariant();
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -664,7 +665,7 @@ namespace OluBackendApp.Controllers
             if (!allowed.Contains(dto.Role))
                 return BadRequest(new { Error = $"Role must be one of: {string.Join(", ", allowed)}" });
 
-            if (await _userManager.FindByEmailAsync(dto.Email) != null)
+            if (await _userManager.FindByEmailAsync(email) != null)
                 return Conflict(new { Error = "Email already registered." });
 
             if (dto.Password != dto.ConfirmPassword)
@@ -739,10 +740,11 @@ namespace OluBackendApp.Controllers
         [HttpPost("verify-registration")]
         public async Task<IActionResult> VerifyRegistration([FromBody] OtpVerifyDto dto)
         {
+            var email = dto.Email?.Trim().ToLowerInvariant();
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(dto.Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
                 return BadRequest(new { Error = "Invalid user." });
 
@@ -800,6 +802,7 @@ namespace OluBackendApp.Controllers
         [HttpPost("verify-device")]
         public async Task<IActionResult> VerifyDevice([FromBody] OtpVerifyDto dto)
         {
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -852,10 +855,11 @@ namespace OluBackendApp.Controllers
         [HttpPost("verify-forgot")]
         public async Task<IActionResult> VerifyForgot([FromBody] OtpVerifyDto dto)
         {
+            var email = dto.Email?.Trim().ToLowerInvariant();
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _userManager.FindByEmailAsync(dto.Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
                 return BadRequest(new { Error = "Invalid user." });
 
