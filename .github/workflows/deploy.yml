@@ -22,45 +22,45 @@
 #       - name: 📦 Restore dependencies
 #         run: dotnet restore
 
-#       - name: 🔨 Build (Local Check)
+#       - name: 🔨 Build (Local Validation)
 #         run: dotnet build --configuration Release --no-restore
 
 #       - name: 🧪 Run tests
 #         run: dotnet test --no-build --verbosity normal
 
-#       - name: 🚀 Deploy Full Source to Lightsail & Restart App
+#       - name: 🚀 Deploy Full Source to Lightsail & Rebuild with Docker Compose
 #         run: |
 #           echo "🔐 Setting up SSH key"
 #           mkdir -p ~/.ssh
 #           echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
 #           chmod 600 ~/.ssh/id_rsa
 
-#           echo "📁 Ensuring remote source directory exists"
+#           echo "📁 Ensuring remote project directory exists"
 #           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
 #             "sudo mkdir -p /opt/olu_backend/source && sudo chown -R \$USER:\$USER /opt/olu_backend"
 
-#           echo "📤 Uploading full project to server"
-#           rsync -avz --exclude 'bin' --exclude 'obj' --exclude '.git' \
+#           echo "📤 Uploading project files (excluding unnecessary)"
+#           rsync -avz --delete \
+#             --exclude 'bin' --exclude 'obj' --exclude '.git' \
 #             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ \
 #             ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/opt/olu_backend/source/
 
-#           echo "🌀 Building & restarting on server"
+#           echo "🐳 Running Docker Compose cleanup and rebuild on remote server"
 #           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
 #             set -e
 #             cd /opt/olu_backend/source
 
-#             echo "🔄 Restoring & building"
-#             dotnet restore
-#             dotnet build --configuration Release
+#             echo "🧼 Cleaning up old Docker images, volumes, and cache"
+#             docker compose down || true
+#             docker builder prune -af || true
+#             docker system prune -af || true
+#             docker volume prune -f || true
 
-#             echo "📦 Running EF migration (if any)"
-#             dotnet ef database update || echo "⚠️ Skipped migration"
+#             echo "📦 Rebuilding and restarting containers"
+#             docker compose build --no-cache
+#             docker compose up -d
 
-#             echo "🚦 Restarting kestrel-oluapp service"
-#             sudo systemctl stop kestrel-oluapp || true
-#             sudo systemctl daemon-reexec
-#             sudo systemctl restart kestrel-oluapp
-#             echo "✅ App restarted successfully" 
+#             echo "✅ Deployment complete!"
 #           EOF
 
 
@@ -96,6 +96,15 @@ jobs:
 
       - name: 🧪 Run tests
         run: dotnet test --no-build --verbosity normal
+
+      - name: 🪄 Ensure config casing is correct (rename before deploy)
+        run: |
+          if [ -f "appsettings.production.json" ]; then
+            echo "Renaming appsettings.production.json → appsettings.Production.json"
+            mv -f appsettings.production.json appsettings.Production.json
+          else
+            echo "No lowercase config file found. Skipping rename."
+          fi
 
       - name: 🚀 Deploy Full Source to Lightsail & Rebuild with Docker Compose
         run: |
