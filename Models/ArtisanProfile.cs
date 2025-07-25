@@ -17,12 +17,12 @@ namespace OluBackendApp.Models
         // Personal
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
-        public DateTime? DateOfBirth { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
         public Gender? Gender { get; set; }
-        public StateOfOrigin? StateOfOrigin { get; set; }
-        public string? ZipCode { get; set; }
-        public string? StateOfResidence { get; set; }
         public Country? Country { get; set; }
+        public State? StateOfOrigin { get; set; }
+        public string? ZipCode { get; set; }
+        
 
         // Professional
         public string? Profession { get; set; }

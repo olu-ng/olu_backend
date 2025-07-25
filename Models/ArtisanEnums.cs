@@ -17,7 +17,7 @@
         // …extend as needed
     }
 
-    public enum StateOfOrigin
+    public enum State
     {
         Abia,
         Adamawa,

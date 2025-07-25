@@ -1,159 +1,4 @@
-﻿//using System.Text;
-//using System.Reflection;
-//using Microsoft.AspNetCore.Authentication.JwtBearer;
-//using Microsoft.AspNetCore.Identity;
-//using Microsoft.EntityFrameworkCore;
-//using Microsoft.IdentityModel.Tokens;
-//using Microsoft.OpenApi.Models;
-//using OluBackendApp.Data;
-//using OluBackendApp.Models;
-//using OluBackendApp.Services;
-//using System;
-
-//var builder = WebApplication.CreateBuilder(args);
-
-//// 1) Swagger services (XML comments + JWT support)
-//// Force Kestrel to listen on all network interfaces, on port 5000
-//builder.WebHost.ConfigureKestrel(serverOptions =>
-//{
-//    serverOptions.ListenAnyIP(5000); // Use your desired port
-//});
-//builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen(options =>
-//{
-//    // XML docs
-//    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-//    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-//    options.IncludeXmlComments(xmlPath);
-
-//    // Swagger doc info
-//    options.SwaggerDoc("v1", new OpenApiInfo
-//    {
-//        Title = "Olu App API",
-//        Version = "v1",
-//        Description = "API documentation for Olu App"
-//    });
-
-//    // JWT Bearer setup for Swagger UI
-//    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-//    {
-//        In = ParameterLocation.Header,
-//        Description = "Enter 'Bearer {token}'",
-//        Name = "Authorization",
-//        Type = SecuritySchemeType.ApiKey,
-//        Scheme = "Bearer"
-//    });
-//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-//    {
-//        [new OpenApiSecurityScheme
-//        {
-//            Reference = new OpenApiReference
-//            {
-//                Type = ReferenceType.SecurityScheme,
-//                Id = "Bearer"
-//            }
-//        }
-//        ] = new string[] { }
-//    });
-//});
-
-//// 2) EF Core & Identity
-////builder.Services.AddDbContext<ApplicationDbContext>(opts =>
-////    opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-////builder.Services.AddDbContext<ApplicationDbContext>(options =>
-////    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-//builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
-//builder.Services.AddIdentity<ApplicationUser, IdentityRole>(opts =>
-//{
-//    // email & password policy...
-//})
-//.AddEntityFrameworkStores<ApplicationDbContext>()
-//.AddDefaultTokenProviders();
-
-//// 3) JWT authentication
-//var jwt = builder.Configuration.GetSection("Jwt");
-//var key = Encoding.UTF8.GetBytes(jwt["Key"]!);
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//    .AddJwtBearer(opts =>
-//    {
-//        opts.TokenValidationParameters = new TokenValidationParameters
-//        {
-//            ValidateIssuerSigningKey = true,
-//            IssuerSigningKey = new SymmetricSecurityKey(key),
-//            ValidateIssuer = true,
-//            ValidIssuer = jwt["Issuer"],
-//            ValidateAudience = true,
-//            ValidAudience = jwt["Audience"],
-//            ValidateLifetime = true
-//        };
-//    });
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowLocalhost8081",
-//        policy =>
-//        {
-//            policy.WithOrigins("http://localhost:8081")
-//                  .AllowAnyHeader()
-//                  .AllowAnyMethod();
-//        });
-//});
-
-//// 4) Your application services & controllers
-//builder.Services
-//    .AddScoped<IEmailService, EmailService>()
-//    .AddScoped<IOtpService, OtpService>()
-//    .AddSingleton<ITokenService, TokenService>()
-//    .AddScoped<IRefreshTokenService, RefreshTokenService>();
-//builder.Services.AddControllers();
-
-//var app = builder.Build();
-
-//// 5) Swagger middleware (enable in all envs or wrap in if: app.Environment.IsDevelopment())
-//app.UseSwagger();
-//app.UseSwaggerUI(c =>
-//{
-//    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Olu App API V1");
-//    c.RoutePrefix = string.Empty;  // serve at root "/"
-//});
-
-//// 6) Kestrel listening and middleware
-////app.Urls.Add("http://+:80");
-//app.UseCors("AllowLocalhost8081");  // 
-//app.UseAuthentication();
-//app.UseAuthorization();
-//app.MapControllers();
-
-//// 7) Role seeding
-//using (var scope = app.Services.CreateScope())
-//{
-//    var rm = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-//    foreach (var role in new[] { "Admin", "Artisan", "OfficeOwner", "SuperAdmin" })
-//        if (!await rm.RoleExistsAsync(role))
-//            await rm.CreateAsync(new IdentityRole(role));
-//}
-
-//app.MapGet("/health", () => Results.Ok("Healthy"));
-//app.UseStaticFiles();
-//app.UseRouting();
-//app.UseAuthentication();
-//app.UseAuthorization();
-//app.MapControllers();
-//app.UseSwagger();
-//app.UseSwaggerUI();
-//app.Run();
-
-
-
-
-
-
-
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -175,6 +20,8 @@ using OluBackendApp.Hubs;           // ← add this
 using OluBackendApp.Models;
 using OluBackendApp.Services;
 using OluBackendApp.DTOs;
+using Newtonsoft.Json.Converters;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -371,8 +218,24 @@ builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 // ------------------------------------------
 // 8) MVC + NewtonsoftJson
 // ------------------------------------------
+//builder.Services.AddControllers()
+//       .AddNewtonsoftJson();
+
 builder.Services.AddControllers()
-       .AddNewtonsoftJson();
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.Converters.Add(new StringEnumConverter());
+        options.SerializerSettings.Converters.Add(new IsoDateTimeConverter
+        {
+            DateTimeFormat = "yyyy-MM-dd"
+        });
+    });
+
+//builder.AddControllers()
+//    .AddNewtonsoftJson(options =>
+//    {
+//        options.SerializerSettings.Converters.Add(new StringEnumConverter());
+//    });
 
 // ------------------------------------------
 // 9) Health checks
