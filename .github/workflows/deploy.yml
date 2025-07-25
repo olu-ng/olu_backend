@@ -60,7 +60,7 @@ jobs:
             sudo systemctl stop kestrel-oluapp || true
             sudo systemctl daemon-reexec
             sudo systemctl restart kestrel-oluapp
-            echo "✅ App restarted successfully"
+            echo "✅ App restarted successfully" 
           EOF
 
 
