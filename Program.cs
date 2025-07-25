@@ -21,6 +21,7 @@ using OluBackendApp.Models;
 using OluBackendApp.Services;
 using OluBackendApp.DTOs;
 using Newtonsoft.Json.Converters;
+using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -94,6 +95,21 @@ builder.Services.ConfigureApplicationCookie(options =>
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var keyBytes = Encoding.UTF8.GetBytes(jwtSection["Key"]!);
 
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(opts =>
+//    {
+//        opts.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuerSigningKey = true,
+//            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+//            ValidateIssuer = true,
+//            ValidIssuer = jwtSection["Issuer"],
+//            ValidateAudience = true,
+//            ValidAudience = jwtSection["Audience"],
+//            ValidateLifetime = true
+//        };
+//    });
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>
     {
@@ -105,9 +121,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSection["Issuer"],
             ValidateAudience = true,
             ValidAudience = jwtSection["Audience"],
-            ValidateLifetime = true
+            ValidateLifetime = true,
+
+            // ✅ Fix role mapping
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.NameIdentifier
         };
     });
+
 
 // ------------------------------------------
 // 4) CORS
