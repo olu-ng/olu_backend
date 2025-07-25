@@ -18,15 +18,15 @@ namespace OluBackendApp.Controllers
     [Route("api/artisan/profile")]
     [Authorize(Roles = Roles.Artisan)]
     [Produces("application/json")]
-    [ApiExplorerSettings(GroupName = "Artisan")]
-    public class ArtisanProfileController : ControllerBase
+    //[ApiExplorerSettings(GroupName = "Artisan")]
+    public class ArtisanController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
         private const long MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-        public ArtisanProfileController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public ArtisanController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
