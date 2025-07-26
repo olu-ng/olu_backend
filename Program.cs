@@ -438,6 +438,6 @@ using (var scope = app.Services.CreateScope())
             await rm.CreateAsync(new IdentityRole(role));
     }
 }
-
+  
 app.Run();
 
