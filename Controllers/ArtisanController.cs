@@ -16,7 +16,7 @@ namespace OluBackendApp.Controllers
 {
     [ApiController]
     [Route("api/artisan/profile")]
-    [Authorize(Roles = Roles.Artisan)]
+    //[Authorize(Roles = Roles.Artisan)]
     [Produces("application/json")]
     //[ApiExplorerSettings(GroupName = "Artisan")]
     public class ArtisanController : ControllerBase
