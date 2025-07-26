@@ -53,7 +53,7 @@
     <Folder Include="NewFolder\" />
 	  <None Update="appsettings.Production.json">
 	  
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>    
 	  </None>
   </ItemGroup> 
 
