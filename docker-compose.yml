@@ -149,6 +149,16 @@ services:
       '
     networks:
       - backend
+  migrate:
+    image: myapp:latest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
+    entrypoint: ["dotnet", "ef", "database", "update", "--context", "ApplicationDbContext"]
+    networks:
+      - backend
 
 volumes:
   sqlvolume:
