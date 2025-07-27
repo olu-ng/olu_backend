@@ -25,7 +25,7 @@ FROM base AS final
 WORKDIR /app
 
 # ✅ Install netcat (this solves your error)
-RUN apt-get update && apt-get install -y netcat
+RUN apt-get update && apt-get install -y netcat-traditional
 
 COPY --from=build /app/publish .
 
