@@ -268,9 +268,13 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
             cd /opt/olu_backend/source
             chmod +x ./wait-for-it.sh || true
+            echo "🧼 Cleaning up containers, images, and volumes (but keeping networks)..."
             docker compose down || true
-            docker system prune -af || true
+            docker container prune -f || true
+            docker image prune -af || true
             docker volume prune -f || true
+
+            echo "🔧 Rebuilding and starting services..."
             docker compose build --no-cache
             docker compose up -d
           EOF
