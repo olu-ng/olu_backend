@@ -73,7 +73,8 @@
 
 
 
-# version: '3.9'
+
+version: '3.9'
 
 services:
 
@@ -115,8 +116,9 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
-    # ✅ NO volumes overriding /app here!
+    volumes:
+      - ./your-app:/app
+      - ./wait-for-it.sh:/app/wait-for-it.sh
     working_dir: /app
     networks:
       - backend
@@ -148,7 +150,12 @@ services:
       - backend
 
   migrate:
-    image: myapp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sdk-image
+    image: myapp-migrate:latest
+    container_name: source-migrate
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -164,6 +171,19 @@ volumes:
 networks:
   backend:
     driver: bridge
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -215,9 +235,7 @@ networks:
 #       sqlserver:
 #         condition: service_healthy
 #     entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
-#     volumes:
-#     - ./your-app:/app
-#     - ./wait-for-it.sh:/app/wait-for-it.sh
+#     ✅ NO volumes overriding /app here!
 #     working_dir: /app
 #     networks:
 #       - backend
@@ -247,16 +265,21 @@ networks:
 #       '
 #     networks:
 #       - backend
-#   migrate:
-#     image: myapp:latest
+
+#    migrate:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#       target: sdk-image
+#     entrypoint: ["dotnet", "ef", "database", "update", "--context", "ApplicationDbContext"]
+#     environment:
+#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
 #     depends_on:
 #       sqlserver:
 #         condition: service_healthy
-#     environment:
-#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
-#     entrypoint: ["dotnet", "ef", "database", "update", "--context", "ApplicationDbContext"]
 #     networks:
 #       - backend
+
 
 # volumes:
 #   sqlvolume:
@@ -264,3 +287,8 @@ networks:
 # networks:
 #   backend:
 #     driver: bridge
+
+
+
+
+
