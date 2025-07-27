@@ -90,7 +90,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/1433"]
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
