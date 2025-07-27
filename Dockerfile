@@ -30,5 +30,5 @@ COPY wait-for-it.sh ./wait-for-it.sh
 RUN chmod +x ./wait-for-it.sh
 
 # Run the application
-ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
-
+# ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
+ENTRYPOINT ["./wait-for-it.sh", "sqlserver:1433", "--timeout=60", "--", "dotnet", "OluBackendApp.dll"]
