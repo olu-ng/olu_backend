@@ -74,6 +74,9 @@
 
 
 
+
+version: "3.9"
+
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -89,7 +92,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: [ "CMD-SHELL", "sqlcmd -U sa -P Your_password123 -Q 'SELECT 1'" ]
+      test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -U sa -P Your_password123 -Q 'SELECT 1'" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -119,12 +122,12 @@ services:
       sqlserver:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 -- dotnet OluBackendApp.dll"]
-    networks:
-      - backend
     volumes:
       - ./wait-for-it.sh:/app/wait-for-it.sh
       - ./your-app:/app
     working_dir: /app
+    networks:
+      - backend
 
   backup:
     image: mcr.microsoft.com/mssql-tools
@@ -155,3 +158,4 @@ volumes:
 networks:
   backend:
     driver: bridge
+
