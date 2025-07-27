@@ -92,7 +92,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -U sa -P Your_password123 -Q 'SELECT 1'" ]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/1433"]
       interval: 10s
       timeout: 5s
       retries: 10
