@@ -103,7 +103,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: myapp:latest
-    container_name: dotnet-app
+    container_name: dotnet-app  
     restart: always
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
