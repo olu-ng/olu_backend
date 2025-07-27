@@ -74,8 +74,10 @@
 
 
 
+version: '3.9'
 
 services:
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -114,16 +116,10 @@ services:
         TrustServerCertificate=True;
     ports:
       - "8080:80"
-      - "5000:5000"
-      - "5001:5001"
     depends_on:
       sqlserver:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c", "until nc -z sqlserver 1433; do echo 'Waiting for SQL Server...'; sleep 2; done; dotnet OluBackendApp.dll"]
-    volumes:
-      - ./your-app:/app
-      - ./wait-for-it.sh:/app/wait-for-it.sh
-      
+    entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
     working_dir: /app
     networks:
       - backend
@@ -133,7 +129,8 @@ services:
     container_name: sqlserver-backup
     restart: always
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
     environment:
       SA_PASSWORD: "P@ssw0rd_Str0ng!2025"
       ACCEPT_EULA: "Y"
@@ -146,10 +143,12 @@ services:
       while true; do
         DATE=$(date +%Y%m%d)
         /opt/mssql-tools/bin/sqlcmd -S sqlserver,1433 -U sa -P "$SA_PASSWORD" -C \
-          -Q "BACKUP DATABASE [$$DB_NAME] TO DISK='\$BACKUP_DIR/$$DB_NAME_$$DATE.bak' WITH INIT"
+          -Q "BACKUP DATABASE [$DB_NAME] TO DISK=''\$BACKUP_DIR/${DB_NAME}_$DATE.bak'' WITH INIT"
         sleep 86400
       done
       '
+    networks:
+      - backend
 
 volumes:
   sqlvolume:
@@ -157,4 +156,3 @@ volumes:
 networks:
   backend:
     driver: bridge
-
