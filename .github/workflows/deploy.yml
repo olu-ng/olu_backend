@@ -93,8 +93,6 @@
 
 
 
-
-
 name: .NET 9 CI/CD Pipeline
 
 on:
@@ -121,20 +119,26 @@ jobs:
             mv -f appsettings.production.json appsettings.Production.json
           fi
 
-      - name: ⚙️ Run EF Core Migrations via Docker build stage
+      - name: 🧬 Build EF-compatible Docker image (with dotnet-ef)
         run: |
-          echo "🐳 Building EF migration container"
+          echo "🐳 Building container for EF Core CLI"
           docker build -t ef-builder --target build .
 
+      - name: ⚙️ Run EF Core migration + database update
+        run: |
           echo "🧬 Running dotnet ef migrations add"
-          docker run --rm -v $PWD:/src -w /src ef-builder \
-            dotnet ef migrations add Init --context ApplicationDbContext || echo "ℹ️ Migration may already exist."
+          docker run --rm \
+            -v ${{ github.workspace }}:/src \
+            -w /src ef-builder \
+            bash -c "dotnet tool install --global dotnet-ef && export PATH=$PATH:/root/.dotnet/tools && dotnet ef migrations add AutoCiMigration --context ApplicationDbContext || echo 'ℹ️ No model changes or migration already exists.'"
 
           echo "🛠️ Running dotnet ef database update"
-          docker run --rm -v $PWD:/src -w /src ef-builder \
-            dotnet ef database update --context ApplicationDbContext
+          docker run --rm \
+            -v ${{ github.workspace }}:/src \
+            -w /src ef-builder \
+            bash -c "export PATH=$PATH:/root/.dotnet/tools && dotnet ef database update --context ApplicationDbContext"
 
-      - name: 📥 Commit EF migration files (if generated)
+      - name: 📥 Commit EF migration files (if created)
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
