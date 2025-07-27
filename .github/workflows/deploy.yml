@@ -121,8 +121,8 @@ jobs:
           dotnet tool install --global dotnet-ef
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: 🪄 Copy production config for EF CLI
-        run: cp appsettings.Production.json appsettings.json
+      # - name: 🪄 Copy production config for EF CLI
+      #   run: cp appsettings.Production.json appsettings.json
 
       - name: 📦 Restore dependencies
         run: dotnet restore OluBackendApp.csproj
