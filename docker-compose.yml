@@ -90,7 +90,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      test: ["CMD-SHELL", "pidof sqlservr || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -119,7 +119,7 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 -- dotnet OluBackendApp.dll"]
+    entrypoint: ["/bin/sh", "-c", "until nc -z sqlserver 1433; do echo 'Waiting for SQL Server...'; sleep 2; done; dotnet OluBackendApp.dll"]
     volumes:
       - ./your-app:/app
       - ./wait-for-it.sh:/app/wait-for-it.sh
