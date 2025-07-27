@@ -156,6 +156,9 @@ jobs:
           if [ -f "appsettings.production.json" ]; then
             mv -f appsettings.production.json appsettings.Production.json
           fi
+          if [ -f "appsettings.Production.json" ]; then
+            mv -f appsettings.Production.json appsettings.json
+          fi
 
       - name: 🚀 Deploy to Lightsail and rebuild containers
         run: |
