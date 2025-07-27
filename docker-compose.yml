@@ -1,4 +1,78 @@
-﻿version: "3.9"
+﻿# version: "3.9"
+
+# services:
+#   sqlserver:
+#     image: mcr.microsoft.com/mssql/server:2022-latest
+#     container_name: sqlserver
+#     restart: always
+#     environment:
+#       SA_PASSWORD: "Your_password123"
+#       ACCEPT_EULA: "Y"
+#     ports:
+#       - "1434:1433"
+#     volumes:
+#       - sqlvolume:/var/opt/mssql
+#     networks:
+#       - backend
+
+#   app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     image: myapp:latest
+#     container_name: dotnet-app
+#     restart: always
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: "Production"
+#       ASPNETCORE_URLS: "http://+:80"
+#       ConnectionStrings__DefaultConnection: >-
+#         Server=sqlserver,1433;
+#         Database=MyDatabase;
+#         User Id=sa;
+#         Password=Your_password123;
+#         TrustServerCertificate=True;
+         
+#     ports:
+#       - "8080:80"
+#       - "5000:5000"
+#       - "5001:5001"
+#     depends_on:
+#       - sqlserver
+#     networks:
+#       - backend
+
+#   backup:
+#     image: mcr.microsoft.com/mssql-tools
+#     container_name: sqlserver-backup
+#     restart: always
+#     depends_on:
+#       - sqlserver
+#     environment:
+#       SA_PASSWORD: "Your_password123"
+#       ACCEPT_EULA: "Y"
+#       BACKUP_DIR: "/backups"
+#       DB_NAME: "MyDatabase"
+#     volumes:
+#       - ./backups:/backups
+#     entrypoint: >-
+#       /bin/bash -lc '
+#       while true; do
+#         DATE=$(date +%Y%m%d)
+#         /opt/mssql-tools/bin/sqlcmd -S sqlserver,1433 -U sa -P "$SA_PASSWORD" -C \
+#           -Q "BACKUP DATABASE [$$DB_NAME] TO DISK='\$BACKUP_DIR/$$DB_NAME_$$DATE.bak' WITH INIT"
+#         sleep 86400
+#       done
+#       '
+
+# volumes:
+#   sqlvolume:
+
+# networks:
+#   backend:
+#     driver: bridge
+
+
+
 
 services:
   sqlserver:
@@ -14,6 +88,12 @@ services:
       - sqlvolume:/var/opt/mssql
     networks:
       - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "sqlcmd -U sa -P Your_password123 -Q 'SELECT 1'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   app:
     build:
@@ -31,15 +111,20 @@ services:
         User Id=sa;
         Password=Your_password123;
         TrustServerCertificate=True;
-         
     ports:
       - "8080:80"
       - "5000:5000"
       - "5001:5001"
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 -- dotnet OluBackendApp.dll"]
     networks:
       - backend
+    volumes:
+      - ./wait-for-it.sh:/app/wait-for-it.sh
+      - ./your-app:/app
+    working_dir: /app
 
   backup:
     image: mcr.microsoft.com/mssql-tools

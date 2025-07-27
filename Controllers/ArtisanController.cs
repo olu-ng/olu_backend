@@ -29,7 +29,7 @@ namespace OluBackendApp.Controllers
         public ArtisanController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
         {
             _db = db;
-            _userManager = userManager;
+            _userManager = userManager;    
             _env = env;
         }
 
