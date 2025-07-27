@@ -118,7 +118,6 @@ jobs:
       - name: 🪄 Prepare configuration files
         run: |
           if [ -f "appsettings.production.json" ]; then
-            cp -f appsettings.production.json appsettings.Production.json
             cp -f appsettings.production.json appsettings.json
           else
             echo "❌ appsettings.production.json not found" && exit 1
