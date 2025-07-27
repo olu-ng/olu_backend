@@ -73,8 +73,7 @@
 
 
 
-
-version: '3.9'
+# version: '3.9'
 
 services:
 
@@ -117,9 +116,7 @@ services:
       sqlserver:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
-    volumes:
-    - ./your-app:/app
-    - ./wait-for-it.sh:/app/wait-for-it.sh
+    # ✅ NO volumes overriding /app here!
     working_dir: /app
     networks:
       - backend
@@ -149,6 +146,7 @@ services:
       '
     networks:
       - backend
+
   migrate:
     image: myapp:latest
     depends_on:
@@ -166,3 +164,103 @@ volumes:
 networks:
   backend:
     driver: bridge
+
+
+
+
+
+
+
+
+# version: '3.9'
+
+# services:
+
+#   sqlserver:
+#     image: mcr.microsoft.com/mssql/server:2022-latest
+#     container_name: sqlserver
+#     restart: always
+#     environment:
+#       SA_PASSWORD: "P@ssw0rd_Str0ng!2025"
+#       ACCEPT_EULA: "Y"
+#     ports:
+#       - "1434:1433"
+#     volumes:
+#       - sqlvolume:/var/opt/mssql
+#     networks:
+#       - backend
+#     healthcheck:
+#       test: ["CMD-SHELL", "pidof sqlservr || exit 1"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 10
+#       start_period: 20s
+
+#   app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     image: myapp:latest
+#     container_name: dotnet-app
+#     restart: always
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: "Production"
+#       ASPNETCORE_URLS: "http://+:80"
+#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
+#     ports:
+#       - "8080:80"
+#       - "5000:5000"
+#       - "5001:5001"
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+#     entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
+#     volumes:
+#     - ./your-app:/app
+#     - ./wait-for-it.sh:/app/wait-for-it.sh
+#     working_dir: /app
+#     networks:
+#       - backend
+
+#   backup:
+#     image: mcr.microsoft.com/mssql-tools
+#     container_name: sqlserver-backup
+#     restart: always
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+#     environment:
+#       SA_PASSWORD: "P@ssw0rd_Str0ng!2025"
+#       ACCEPT_EULA: "Y"
+#       BACKUP_DIR: "/backups"
+#       DB_NAME: "MyDatabase"
+#     volumes:
+#       - ./backups:/backups
+#     entrypoint: >-
+#       /bin/bash -lc '
+#       while true; do
+#         DATE=$(date +%Y%m%d)
+#         /opt/mssql-tools/bin/sqlcmd -S sqlserver,1433 -U sa -P "$SA_PASSWORD" -C \
+#           -Q "BACKUP DATABASE [$DB_NAME] TO DISK=''\$BACKUP_DIR/${DB_NAME}_$DATE.bak'' WITH INIT"
+#         sleep 86400
+#       done
+#       '
+#     networks:
+#       - backend
+#   migrate:
+#     image: myapp:latest
+#     depends_on:
+#       sqlserver:
+#         condition: service_healthy
+#     environment:
+#       ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
+#     entrypoint: ["dotnet", "ef", "database", "update", "--context", "ApplicationDbContext"]
+#     networks:
+#       - backend
+
+# volumes:
+#   sqlvolume:
+
+# networks:
+#   backend:
+#     driver: bridge
