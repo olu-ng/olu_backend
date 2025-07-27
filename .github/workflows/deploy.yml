@@ -93,6 +93,10 @@
 
 
 
+
+
+
+
 name: .NET 9 CI/CD Pipeline
 
 on:
@@ -113,32 +117,32 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: 🪄 Ensure proper config casing
+      - name: 🪄 Copy appsettings.Production.json → appsettings.json
         run: |
-          if [ -f "appsettings.production.json" ]; then
-            mv -f appsettings.production.json appsettings.Production.json
+          if [ -f "appsettings.Production.json" ]; then
+            cp appsettings.Production.json appsettings.json
+          else
+            echo "❌ Missing appsettings.Production.json" && exit 1
           fi
 
-      - name: 🧬 Build EF-compatible Docker image (with dotnet-ef)
+      - name: 🐳 Build EF-compatible Docker image
         run: |
-          echo "🐳 Building container for EF Core CLI"
           docker build -t ef-builder --target build .
 
-      - name: ⚙️ Run EF Core migration + database update
+      - name: 🧬 Run EF Core Migration (Init)
         run: |
-          echo "🧬 Running dotnet ef migrations add"
-          docker run --rm \
-            -v ${{ github.workspace }}:/src \
-            -w /src ef-builder \
-            bash -c "dotnet tool install --global dotnet-ef && export PATH=$PATH:/root/.dotnet/tools && dotnet ef migrations add AutoCiMigration --context ApplicationDbContext || echo 'ℹ️ No model changes or migration already exists.'"
+          docker run --rm -v ${{ github.workspace }}:/src -w /src ef-builder \
+            bash -c "dotnet tool install --global dotnet-ef \
+            && export PATH=\$PATH:/root/.dotnet/tools \
+            && dotnet ef migrations add AutoCiMigration --context ApplicationDbContext || echo 'ℹ️ Migration may already exist.'"
 
-          echo "🛠️ Running dotnet ef database update"
-          docker run --rm \
-            -v ${{ github.workspace }}:/src \
-            -w /src ef-builder \
-            bash -c "export PATH=$PATH:/root/.dotnet/tools && dotnet ef database update --context ApplicationDbContext"
+      - name: 🛠️ Update SQL Server DB
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/src -w /src ef-builder \
+            bash -c "export PATH=\$PATH:/root/.dotnet/tools \
+            && dotnet ef database update --context ApplicationDbContext"
 
-      - name: 📥 Commit EF migration files (if created)
+      - name: 📥 Commit EF migration files (if generated)
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -169,3 +173,6 @@ jobs:
             docker compose build --no-cache
             docker compose up -d
           EOF
+
+      - name: 🧹 Cleanup temp config
+        run: rm -f appsettings.json
