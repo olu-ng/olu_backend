@@ -108,18 +108,18 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ASPNETCORE_URLS: "http://+:80"
-      ConnectionStrings__DefaultConnection: >-
-        Server=sqlserver,1433;
-        Database=MyDatabase;
-        User Id=sa;
-        Password=P@ssw0rd_Str0ng!2025;
-        TrustServerCertificate=True;
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=MyDatabase;User Id=sa;Password=P@ssw0rd_Str0ng!2025;TrustServerCertificate=True;"
     ports:
       - "8080:80"
+      - "5000:5000"
+      - "5001:5001"
     depends_on:
       sqlserver:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet OluBackendApp.dll"]
+    volumes:
+    - ./your-app:/app
+    - ./wait-for-it.sh:/app/wait-for-it.sh
     working_dir: /app
     networks:
       - backend
