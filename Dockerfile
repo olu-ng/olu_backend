@@ -17,7 +17,13 @@ RUN dotnet restore "OluBackendApp.csproj"
 COPY . .
 
 # Set up correct config casing
-RUN cp -f appsettings.Production.json appsettings.json
+# RUN cp -f appsettings.Production.json appsettings.json
+# Set up correct config casing (safe fallback)
+RUN if [ -f appsettings.Production.json ]; then \
+      cp -f appsettings.Production.json appsettings.json; \
+    else \
+      echo "✅ No production config found. Default appsettings.json will be used."; \
+    fi
 
 # Publish to /app (this will be copied into runtime container)
 RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app
