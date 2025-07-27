@@ -117,8 +117,8 @@ services:
       sqlserver:
         condition: service_healthy
     volumes:
-      - ./your-app:/app
-      - ./wait-for-it.sh:/app/wait-for-it.sh
+      - /app
+      - ./wait-for-it.sh
     working_dir: /app
     networks:
       - backend

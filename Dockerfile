@@ -49,4 +49,5 @@ RUN chmod +x wait-for-it.sh
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 
-ENTRYPOINT ["./wait-for-it.sh", "sqlserver:1433", "--timeout=60", "--", "dotnet", "OluBackendApp.dll"]
+# ENTRYPOINT ["./wait-for-it.sh", "sqlserver:1433", "--timeout=60", "--", "dotnet", "OluBackendApp.dll"]
+entrypoint: ["/bin/sh", "-c", "./wait-for-it.sh sqlserver:1433 --timeout=60 -- dotnet /app/OluBackendApp.dll"]
