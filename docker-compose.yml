@@ -87,7 +87,7 @@ services:
       ACCEPT_EULA: "Y"
     ports:
       - "1434:1433"
-    volumes:
+    volumes:  
       - sqlvolume:/var/opt/mssql
     networks:
       - backend
