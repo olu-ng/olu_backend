@@ -161,7 +161,7 @@ jobs:
             cd /opt/olu_backend/source
 
             echo "🧼 Cleaning up old Docker images, volumes, and cache"
-            
+            chmod +x ./wait-for-it.sh
             docker compose down || true
             docker builder prune -af || true
             docker system prune -af || true

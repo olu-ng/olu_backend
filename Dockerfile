@@ -23,6 +23,10 @@ RUN dotnet publish "OluBackendApp.csproj" -c Release -o /app/publish
 # Final image: copy the published output
 FROM base AS final
 WORKDIR /app
+
+# ✅ Install netcat (this solves your error)
+RUN apt-get update && apt-get install -y netcat
+
 COPY --from=build /app/publish .
 
 # ✅ Copy the wait-for-it script and make it executable
