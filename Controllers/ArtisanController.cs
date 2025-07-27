@@ -18,7 +18,7 @@ namespace OluBackendApp.Controllers
     [Route("api/artisan/profile")]
     //[Authorize(Roles = Roles.Artisan)]
     [Produces("application/json")]
-    //[ApiExplorerSettings(GroupName = "Artisan")]
+    [ApiExplorerSettings(GroupName = "Artisan")]
     public class ArtisanController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -48,7 +48,8 @@ namespace OluBackendApp.Controllers
         public async Task<IActionResult> Get()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            //if (user == null) return Unauthorized();
+            if (user == null) return Ok();
 
             var profile = await _db.ArtisanProfiles.FirstOrDefaultAsync(p => p.UserId == user.Id && !p.IsDeleted);
             if (profile == null) return NotFound();
