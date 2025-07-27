@@ -13,6 +13,7 @@ COPY . .
 
 # Publish the application
 RUN dotnet publish OluBackendApp.csproj -c Release -o /app/publish
+RUN ls -la /app/publish
 
 # ----------------------------------------
 # STAGE 2: Run in runtime image
