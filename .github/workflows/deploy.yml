@@ -282,7 +282,7 @@ jobs:
             cd /opt/olu_backend/source
             docker run --rm \
               --network backend \
-              -v \$(pwd):/src -w /src \
+              -v /opt/olu_backend/source:/src -w /src \
               mcr.microsoft.com/dotnet/sdk:9.0 \
               dotnet ef database update --context ApplicationDbContext
           EOF
