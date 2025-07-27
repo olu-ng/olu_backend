@@ -25,6 +25,10 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
+# ✅ Copy the wait-for-it script and make it executable
+COPY wait-for-it.sh ./wait-for-it.sh
+RUN chmod +x ./wait-for-it.sh
+
 # Run the application
 ENTRYPOINT ["dotnet", "OluBackendApp.dll"]
 
